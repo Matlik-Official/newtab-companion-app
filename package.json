@@ -29,7 +29,6 @@
       "services/**/*",
       "state/**/*",
       "assets/**/*",
-      "preload/**/*",
       "package.json"
     ],
     "win": {
