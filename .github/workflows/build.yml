@@ -37,10 +37,17 @@ jobs:
           echo "SPOTIFY_REDIRECT_URL=${{ secrets.SPOTIFY_REDIRECT_URL }}" >> $GITHUB_ENV
           echo "SPOTIFY_REDIRECT_PORT=${{ secrets.SPOTIFY_REDIRECT_PORT }}" >> $GITHUB_ENV
 
+      # --- 5. Bake secrets into .env shipped with the app ---
+      - name: Write .env for packaged app
+        run: |
+          echo "SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}" > .env
+          echo "SPOTIFY_REDIRECT_URL=${{ secrets.SPOTIFY_REDIRECT_URL }}" >> .env
+          echo "SPOTIFY_REDIRECT_PORT=${{ secrets.SPOTIFY_REDIRECT_PORT }}" >> .env
+
       - name: Inject build-time environment variables
         run: node inject-env.mjs
 
-      # --- 5. Sync version from tag ---
+      # --- 6. Sync version from tag ---
       - name: Sync version from tag (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
@@ -56,13 +63,13 @@ jobs:
           echo "Setting version to $VERSION"
           npm version --no-git-tag-version $VERSION
 
-      # --- 6. Build Electron app ---
+      # --- 7. Build Electron app ---
       - name: Build Electron App
         run: |
           npm run build
           npx electron-builder --publish never
 
-      # --- 7. Upload artifacts to GitHub Release ---
+      # --- 8. Upload artifacts to GitHub Release ---
       - name: Upload Release Artifacts
         uses: softprops/action-gh-release@v2
         with:

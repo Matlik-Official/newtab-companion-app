@@ -17,7 +17,11 @@ process.env.SPOTIFY_REDIRECT_URL = ENV.SPOTIFY_REDIRECT_URL;
 process.env.SPOTIFY_REDIRECT_PORT = ENV.SPOTIFY_REDIRECT_PORT;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const isDev = process.env.VITE_DEV_SERVER_URL;
+const isDev = !!process.env.VITE_DEV_SERVER_URL;
+
+const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const REDIRECT_URL = process.env.SPOTIFY_REDIRECT_URL;
+const REDIRECT_PORT = parseInt(process.env.SPOTIFY_REDIRECT_PORT, 10) || 4370;
 
 let mainWindow;
 const nowPlayingStore = createNowPlayingStore(eventBus);
