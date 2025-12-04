@@ -45,7 +45,7 @@ export async function startSpotifyAuth() {
     return inflightAuth;
   }
 
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientId = process.env.VITE_SPOTIFY_CLIENT_ID;
   if (!clientId) {
     throw new Error("Missing SPOTIFY_CLIENT_ID env variable");
   }
@@ -58,7 +58,7 @@ export async function startSpotifyAuth() {
   const redirectHost = process.env.SPOTIFY_REDIRECT_HOST || "localhost";
   const redirectUri =
     process.env.SPOTIFY_REDIRECT_URL ||
-    `http://${redirectHost}:${redirectPort}/callback`;
+    `http://127.0.0.1:4370/callback`;
   const verifier = generateVerifier();
   const codeChallenge = challenge(verifier);
   const state = cuid();

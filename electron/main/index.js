@@ -12,14 +12,14 @@ import { eventBus, EVENTS } from "../../state/events.js";
 import { createNowPlayingStore } from "../../state/nowPlayingStore.js";
 import { createSettingsStore } from "../../state/settingsStore.js";
 
-process.env.SPOTIFY_CLIENT_ID = ENV.SPOTIFY_CLIENT_ID;
+process.env.VITE_SPOTIFY_CLIENT_ID = ENV.VITE_SPOTIFY_CLIENT_ID;
 process.env.SPOTIFY_REDIRECT_URL = ENV.SPOTIFY_REDIRECT_URL;
 process.env.SPOTIFY_REDIRECT_PORT = ENV.SPOTIFY_REDIRECT_PORT;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
 
-const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const CLIENT_ID = process.env.VITE_SPOTIFY_CLIENT_ID;
 const REDIRECT_URL = process.env.SPOTIFY_REDIRECT_URL;
 const REDIRECT_PORT = parseInt(process.env.SPOTIFY_REDIRECT_PORT, 10) || 4370;
 

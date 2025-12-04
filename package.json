@@ -5,7 +5,7 @@
   "main": "electron/main/index.js",
   "type": "module",
   "scripts": {
-    "prepare-env": "echo \"export default { clientId: '$SPOTIFY_CLIENT_ID', redirectUrl: '$SPOTIFY_REDIRECT_URL', redirectPort: '$SPOTIFY_REDIRECT_PORT' }\" > electron/env.js",
+    "prepare-env": "echo \"export default { clientId: '$VITE_SPOTIFY_CLIENT_ID', redirectUrl: '$SPOTIFY_REDIRECT_URL', redirectPort: '$SPOTIFY_REDIRECT_PORT' }\" > electron/env.js",
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:main\"",
     "dev:renderer": "vite",
     "dev:main": "wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
