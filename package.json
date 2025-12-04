@@ -23,6 +23,7 @@
     },
     "files": [
       "dist/**/*",
+      "electron/**/*",
       "package.json"
     ],
     "win": {
