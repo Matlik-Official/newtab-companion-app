@@ -13,6 +13,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   updateSettings: (payload) => ipcRenderer.invoke("settings:update", payload),
   getNowPlaying: () => ipcRenderer.invoke("now-playing:get"),
   startSpotifyLogin: () => ipcRenderer.invoke("spotify:login"),
+  spotifyStatus: () => ipcRenderer.invoke("spotify:status"),
+  spotifyLogout: () => ipcRenderer.invoke("spotify:logout"),
+  windowMinimize: () => ipcRenderer.invoke("window:minimize"),
+  windowMaximize: () => ipcRenderer.invoke("window:maximize"),
+  windowClose: () => ipcRenderer.invoke("window:close"),
   onNowPlaying: createListener("now-playing"),
   onSettingsUpdated: createListener("settings-updated")
 });

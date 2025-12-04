@@ -6,6 +6,7 @@ import { createApiServer } from "../../api/server.js";
 import { createCiderService } from "../../services/cider.js";
 import { createSpotifyService } from "../../services/spotify.js";
 import { startSpotifyAuth } from "../../services/spotifyAuth.js";
+import { clearTokens, hasTokens } from "../../services/spotifyTokens.js";
 import { createPlaybackEngine } from "../../state/engine.js";
 import { eventBus, EVENTS } from "../../state/events.js";
 import { createNowPlayingStore } from "../../state/nowPlayingStore.js";
@@ -42,8 +43,12 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 720,
+    minWidth: 600,
+    minHeight: 800,
     backgroundColor: "#0b1021",
-    titleBarStyle: "hiddenInset",
+    icon: path.join(__dirname, "..", "assets", "logo.png"),
+    frame: false,
+    titleBarStyle: "hidden",
     webPreferences: {
       preload: path.join(__dirname, "..", "preload", "index.js"),
       contextIsolation: true,
@@ -111,6 +116,32 @@ async function bootstrap() {
     const tokens = await startSpotifyAuth();
     await refreshNowPlayingOnce();
     return tokens;
+  });
+  ipcMain.handle("spotify:status", async () => {
+    return { connected: await hasTokens() };
+  });
+  ipcMain.handle("spotify:logout", async () => {
+    await clearTokens();
+    nowPlayingStore.reset();
+    return { ok: true };
+  });
+  ipcMain.handle("window:minimize", () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) win.minimize();
+  });
+  ipcMain.handle("window:maximize", () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) {
+      if (win.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win.maximize();
+      }
+    }
+  });
+  ipcMain.handle("window:close", () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) win.close();
   });
 }
 

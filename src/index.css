@@ -15,3 +15,10 @@ body {
     radial-gradient(circle at 80% 0%, #172554, #0b1021 45%),
     #0b1021;
 }
+
+.drag {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}

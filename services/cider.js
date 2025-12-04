@@ -1,65 +1,62 @@
-import WebSocket from "ws";
-import { default as cuid } from "cuid";
+import axios from "axios";
+
+const API_BASE = process.env.CIDER_API_BASE || "http://localhost:10767/api/v1";
+const debug = (...args) => {
+  if (process.env.CIDER_DEBUG === "1") {
+    console.log("[cider]", ...args);
+  }
+};
+
+function mapNowPlaying(info = {}) {
+  const artTemplate = info.artwork?.url || "";
+  const artworkUrl = artTemplate.replace("{w}", "512").replace("{h}", "512");
+  const durationMs =
+    typeof info.durationInMillis === "number" ? info.durationInMillis : 0;
+  const progressMs =
+    typeof info.currentPlaybackTime === "number"
+      ? Math.max(0, Math.floor(info.currentPlaybackTime * 1000))
+      : 0;
+  return {
+    title: info.name || "",
+    artist: info.artistName || "",
+    album: info.albumName || "",
+    artworkUrl,
+    progressMs,
+    durationMs,
+    isPlaying: info.remainingTime ? info.remainingTime > 0 : true,
+    source: "cider"
+  };
+}
 
 export function createCiderService() {
-  let socket = null;
-  let isHealthy = false;
-
-  async function connect() {
-    return new Promise((resolve) => {
-      try {
-        socket = new WebSocket("ws://localhost:10767");
-        socket.on("open", () => {
-          isHealthy = true;
-          resolve(true);
-        });
-        socket.on("close", () => {
-          isHealthy = false;
-        });
-        socket.on("error", () => {
-          isHealthy = false;
-          resolve(false);
-        });
-      } catch (err) {
-        isHealthy = false;
-        resolve(false);
-      }
-    });
+  async function fetchNowPlaying() {
+    const url = `${API_BASE}/playback/now-playing`;
+    const resp = await axios.get(url, { timeout: 1500 });
+    if (resp.data?.status !== "ok" || !resp.data?.info) {
+      debug("unexpected response", resp.data);
+      return null;
+    }
+    return mapNowPlaying(resp.data.info);
   }
 
   return {
     id: "cider",
     async isAvailable() {
-      if (isHealthy) return true;
-      return connect();
+      try {
+        const np = await fetchNowPlaying();
+        return !!np;
+      } catch (err) {
+        debug("availability check failed", err?.message || err);
+        return false;
+      }
     },
     async getNowPlaying() {
-      if (!socket || socket.readyState !== WebSocket.OPEN) return null;
-      // Minimal request/response cycle for now; extend with proper RPC later.
-      return new Promise((resolve) => {
-        const timeout = setTimeout(() => resolve(null), 600);
-        const request = JSON.stringify({ action: "track:info", id: cuid() });
-        socket.once("message", (msg) => {
-          clearTimeout(timeout);
-          try {
-            const parsed = JSON.parse(msg.toString());
-            const data = parsed.data || parsed.payload || {};
-            resolve({
-              title: data.title || "",
-              artist: data.artist || data.artists?.join(", ") || "",
-              album: data.album || "",
-              artworkUrl: data.artworkUrl || "",
-              progressMs: data.position ?? 0,
-              durationMs: data.duration ?? 0,
-              isPlaying: data.isPlaying ?? false,
-              source: "cider"
-            });
-          } catch {
-            resolve(null);
-          }
-        });
-        socket.send(request);
-      });
+      try {
+        return await fetchNowPlaying();
+      } catch (err) {
+        debug("getNowPlaying failed", err?.message || err);
+        return null;
+      }
     }
   };
 }

@@ -16,41 +16,39 @@ export function createPlaybackEngine({
   let timer = null;
   let lastServiceId = null;
 
-  async function selectService(settings) {
+  async function tick() {
+    const settings = await getSettings();
     const order = settings.preferSpotify
       ? [services.find((s) => s.id === "spotify"), services.find((s) => s.id === "cider")]
       : [services.find((s) => s.id === "cider"), services.find((s) => s.id === "spotify")];
 
+    let updated = false;
+
     for (const svc of order) {
-      if (svc && (await svc.isAvailable())) {
-        return svc;
+      if (!svc) continue;
+      try {
+        const ok = await svc.isAvailable();
+        if (!ok) continue;
+
+        if (svc.id !== lastServiceId) {
+          console.log("[engine] active service ->", svc.id);
+          lastServiceId = svc.id;
+        }
+
+        const np = await svc.getNowPlaying();
+        if (np) {
+          nowPlayingStore.set({ ...np, source: svc.id });
+          updated = true;
+          break;
+        }
+      } catch (err) {
+        console.error(`[engine] now playing fetch failed for ${svc.id}`, err);
       }
     }
-    return null;
-  }
 
-  async function tick() {
-    const settings = await getSettings();
-    const service = await selectService(settings);
-    if (!service) {
+    if (!updated) {
       nowPlayingStore.set({ ...defaultNowPlaying, source: "none" });
-      return;
-    }
-
-    if (service.id !== lastServiceId) {
-      console.log("[engine] active service ->", service.id);
-      lastServiceId = service.id;
-    }
-
-    try {
-      const np = await service.getNowPlaying();
-      if (np) {
-        nowPlayingStore.set({ ...np, source: service.id });
-      } else {
-        // keep last; do nothing
-      }
-    } catch (err) {
-      console.error("[engine] now playing fetch failed", err);
+      lastServiceId = null;
     }
   }
 

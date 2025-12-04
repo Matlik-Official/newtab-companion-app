@@ -22,6 +22,11 @@ export interface ElectronAPI {
   updateSettings: (payload: Partial<Settings>) => Promise<Settings>;
   getNowPlaying: () => Promise<NowPlaying>;
   startSpotifyLogin: () => Promise<{ accessToken: string; refreshToken?: string; expiresAt?: number }>;
+  spotifyStatus: () => Promise<{ connected: boolean }>;
+  spotifyLogout: () => Promise<{ ok: boolean }>;
+  windowMinimize: () => Promise<void>;
+  windowMaximize: () => Promise<void>;
+  windowClose: () => Promise<void>;
   onNowPlaying: (cb: (data: NowPlaying) => void) => () => void;
   onSettingsUpdated: (cb: (data: Settings) => void) => () => void;
 }

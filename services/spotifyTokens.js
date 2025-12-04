@@ -27,6 +27,11 @@ export async function getStoredTokens() {
   }
 }
 
+export async function hasTokens() {
+  const tokens = await getStoredTokens();
+  return !!tokens?.accessToken;
+}
+
 export async function ensureAccessToken({ clientId }) {
   const tokens = await getStoredTokens();
   if (!tokens) return null;
@@ -60,5 +65,13 @@ export async function ensureAccessToken({ clientId }) {
   } catch (err) {
     console.warn("[spotify] refresh failed", err?.response?.status, err?.response?.data);
     return null;
+  }
+}
+
+export async function clearTokens() {
+  try {
+    await keytar.deletePassword(TOKEN_SERVICE, TOKEN_ACCOUNT);
+  } catch (err) {
+    console.warn("[spotify] failed to clear tokens", err);
   }
 }
