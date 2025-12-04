@@ -36,11 +36,7 @@ jobs:
           echo "SPOTIFY_REDIRECT_PORT=${{ secrets.SPOTIFY_REDIRECT_PORT }}" >> $GITHUB_ENV
 
       - name: Build with electron-builder
-        run: |
-          npx electron-builder --publish never \
-            -c.linux.target=AppImage \
-            -c.win.target=nsis \
-            -c.mac.target=dmg
+        run: npx electron-builder --publish never -c.linux.target=AppImage -c.win.target=nsis -c.mac.target=dmg
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
