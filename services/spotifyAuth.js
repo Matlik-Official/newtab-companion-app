@@ -63,10 +63,13 @@ export async function startSpotifyAuth() {
   const state = cuid();
 
   const scope = [
-    "user-read-playback-state",
-    "user-read-currently-playing",
-    "user-read-recently-played"
-  ].join(" ");
+  "user-read-playback-state",
+  "user-read-currently-playing",
+  "user-read-recently-played",
+  "user-read-playback-position",
+  "user-modify-playback-state",
+  "streaming"
+].join(" ")
 
   const authUrl = new URL("https://accounts.spotify.com/authorize");
   authUrl.searchParams.set("client_id", clientId);
