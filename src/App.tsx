@@ -33,6 +33,8 @@ export default function App() {
   const [updateStatus, setUpdateStatus] = useState("Idle");
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
+  const [showNewTab, setShowNewTab] = useState<boolean>(false);
+
   useEffect(() => {
     if (!api) {
       setStatus("Preload missing");
@@ -110,7 +112,24 @@ export default function App() {
     setNowPlaying((prev) => (prev && prev.source === "spotify" ? null : prev));
   };
 
-  return (
+  return showNewTab ? (
+    <main className="min-h-screen w-full bg-slate-950 text-slate-50 flex flex-col">
+      <div className="w-[calc(95%)] h-fit p-1 drag absolute z-10 opacity-20 hover:opacity-80 transition-all">
+        <Button
+          variant="outline"
+          size="icon"
+          className="gap-2 no-drag scale-75 pointer-events-auto"
+          onClick={(e) => {
+            e.preventDefault();
+            setShowNewTab(!showNewTab);
+          }}
+        >
+          <X />
+        </Button>
+      </div>
+      <iframe src="https://newtab.matlikofficial.com" className="h-full flex-1"></iframe>
+    </main>
+  ) : (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <header className="flex select-none items-center justify-between bg-slate-950/80 p-4 backdrop-blur drag sticky top-0 z-10">
         <div className="flex items-center gap-3 text-sm text-slate-300">
@@ -125,19 +144,12 @@ export default function App() {
             variant="outline"
             size="sm"
             className="gap-2 no-drag"
-            asChild
+            onClick={(e) => {
+              e.preventDefault();
+              setShowNewTab(!showNewTab);
+            }}
           >
-            <a
-              href="https://newtab.matlikofficial.com"
-              className="gap-2"
-              onClick={(e) => {
-                e.preventDefault();
-                api?.openExternal?.("https://newtab.matlikofficial.com");
-              }}
-            >
-              <ExternalLink className="h-4 w-4" />
-              NewTab
-            </a>
+            NewTab
           </Button>
           <Button
             variant="outline"
@@ -313,7 +325,7 @@ export default function App() {
 
       {showSettings && settings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm no-drag">
-          <div className="w-[520px] max-w-full rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+          <div className="w-[520px] max-w-full rounded-md border border-slate-800 bg-slate-900 p-4 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.12em] text-slate-400">
@@ -331,7 +343,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-200">
+            <div className="flex flex-col gap-2 rounded-md border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-200">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-3">
                   <span>Spotify</span>
@@ -371,7 +383,10 @@ export default function App() {
                 </Button>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span>Prefer Cider</span>
+                <div className="flex flex-col">
+                  <p>Prefer Cider</p>
+                  <span className="text-xs opacity-50">Should be detected automatically when cider is open</span>
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
@@ -417,31 +432,6 @@ export default function App() {
                   Check for Updates
                 </Button>
               </div>
-            </div>
-
-            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-              <button
-                className="flex w-full items-center justify-between text-sm text-slate-300"
-                onClick={() => setShowAdvanced((v) => !v)}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <SlidersHorizontal className="h-4 w-4" />
-                  Advanced
-                </span>
-                <span className="text-xs text-slate-400">
-                  {showAdvanced ? "Hide" : "Show"}
-                </span>
-              </button>
-              {showAdvanced && (
-                <div className="mt-3 space-y-2 text-sm text-slate-200">
-                  <div className="flex items-center justify-between gap-3">
-                    <span>API Port</span>
-                    <span className="rounded-full bg-slate-800 px-3 py-1 text-xs">
-                      {settings.apiPort}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -28,6 +28,10 @@ export function createApiServer({ eventBus, nowPlayingStore, settingsStore }) {
   app.get("/api/settings", async (_req, res) => {
     res.json(await settingsStore.get());
   });
+  
+  app.get("/api/widget", async (_req, res) => {
+    res.send(`<p style="color: red;">haha</p>`);
+  });
 
   app.post("/api/settings", async (req, res) => {
     const updated = await settingsStore.update(req.body || {});
