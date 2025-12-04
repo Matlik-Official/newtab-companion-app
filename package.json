@@ -19,6 +19,7 @@
     "appId": "com.matlikofficial.newtabcompanion",
     "productName": "Newtab Companion",
     "icon": "electron/assets/logo.png",
+    "artifactName": "newtab-companion-${os}-${arch}.${ext}",
     "directories": {
       "output": "dist"
     },
@@ -54,13 +55,14 @@
     },
     "linux": {
       "target": [
-        "AppImage"
+        "tar.gz"
       ],
       "icon": "electron/assets/logo.png"
     },
     "mac": {
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "icon": "electron/assets/logo.png"
     },
