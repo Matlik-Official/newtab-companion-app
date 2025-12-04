@@ -1,7 +1,6 @@
-import psList from "ps-list";
 import axios from "axios";
 import { default as cuid } from "cuid";
-import { ensureAccessToken } from "./spotifyTokens.js";
+import { ensureAccessToken, hasTokens } from "./spotifyTokens.js";
 
 const debug = (...args) => {
   if (process.env.SPOTIFY_DEBUG === "1") {
@@ -13,17 +12,9 @@ export function createSpotifyService() {
   return {
     id: "spotify",
     async isAvailable() {
-      try {
-        const processes = await psList();
-        const found = processes.some((p) =>
-          String(p.name).toLowerCase().includes("spotify")
-        );
-        debug("process check", found ? "found" : "not found");
-        return found;
-      } catch (err) {
-        console.warn("[spotify] process check failed", err);
-        return false;
-      }
+      const hasCreds = await hasTokens();
+      debug("token check", hasCreds ? "found" : "missing");
+      return hasCreds;
     },
     async getNowPlaying() {
       const token = await ensureAccessToken({
