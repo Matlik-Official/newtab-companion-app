@@ -1,4 +1,4 @@
-import "dotenv/config";
+import { ENV } from "../env.js";
 import { app, BrowserWindow, ipcMain, Tray, Menu } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,6 +11,10 @@ import { createPlaybackEngine } from "../../state/engine.js";
 import { eventBus, EVENTS } from "../../state/events.js";
 import { createNowPlayingStore } from "../../state/nowPlayingStore.js";
 import { createSettingsStore } from "../../state/settingsStore.js";
+
+process.env.SPOTIFY_CLIENT_ID = ENV.SPOTIFY_CLIENT_ID;
+process.env.SPOTIFY_REDIRECT_URL = ENV.SPOTIFY_REDIRECT_URL;
+process.env.SPOTIFY_REDIRECT_PORT = ENV.SPOTIFY_REDIRECT_PORT;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.VITE_DEV_SERVER_URL;

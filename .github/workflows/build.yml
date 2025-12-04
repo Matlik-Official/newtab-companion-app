@@ -37,6 +37,9 @@ jobs:
           echo "SPOTIFY_REDIRECT_URL=${{ secrets.SPOTIFY_REDIRECT_URL }}" >> $GITHUB_ENV
           echo "SPOTIFY_REDIRECT_PORT=${{ secrets.SPOTIFY_REDIRECT_PORT }}" >> $GITHUB_ENV
 
+      - name: Inject build-time environment variables
+        run: node inject-env.mjs
+
       # --- 5. Sync version from tag ---
       - name: Sync version from tag (Linux/macOS)
         if: runner.os != 'Windows'
