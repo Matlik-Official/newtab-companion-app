@@ -33,14 +33,14 @@ jobs:
       # --- 4. Export secrets to ENV ---
       - name: Set environment variables
         run: |
-          echo "SPOTIFY_CLIENT_ID=${{ secrets.VITE_SPOTIFY_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "VITE_SPOTIFY_CLIENT_ID=${{ secrets.VITE_SPOTIFY_CLIENT_ID }}" >> $GITHUB_ENV
           echo "SPOTIFY_REDIRECT_URL=${{ secrets.SPOTIFY_REDIRECT_URL }}" >> $GITHUB_ENV
           echo "SPOTIFY_REDIRECT_PORT=${{ secrets.SPOTIFY_REDIRECT_PORT }}" >> $GITHUB_ENV
 
       # --- 5. Bake secrets into .env shipped with the app ---
       - name: Write .env for packaged app
         run: |
-          echo "SPOTIFY_CLIENT_ID=${{ secrets.VITE_SPOTIFY_CLIENT_ID }}" > .env
+          echo "VITE_SPOTIFY_CLIENT_ID=${{ secrets.VITE_SPOTIFY_CLIENT_ID }}" > .env
           echo "SPOTIFY_REDIRECT_URL=${{ secrets.SPOTIFY_REDIRECT_URL }}" >> .env
           echo "SPOTIFY_REDIRECT_PORT=${{ secrets.SPOTIFY_REDIRECT_PORT }}" >> .env
 
