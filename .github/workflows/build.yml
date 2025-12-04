@@ -33,19 +33,26 @@ jobs:
       # --- 4. Export secrets to ENV ---
       - name: Set environment variables
         run: |
-          echo "VITE_SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}" >> $GITHUB_ENV
           echo "SPOTIFY_REDIRECT_URL=${{ secrets.SPOTIFY_REDIRECT_URL }}" >> $GITHUB_ENV
           echo "SPOTIFY_REDIRECT_PORT=${{ secrets.SPOTIFY_REDIRECT_PORT }}" >> $GITHUB_ENV
 
       # --- 5. Bake secrets into .env shipped with the app ---
       - name: Write .env for packaged app
         run: |
-          echo "VITE_SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}" > .env
+          echo "SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}" > .env
           echo "SPOTIFY_REDIRECT_URL=${{ secrets.SPOTIFY_REDIRECT_URL }}" >> .env
           echo "SPOTIFY_REDIRECT_PORT=${{ secrets.SPOTIFY_REDIRECT_PORT }}" >> .env
 
       - name: Inject build-time environment variables
-        run: node inject-env.mjs
+        run: |
+          echo "export const ENV = {" > electron/env.js
+          echo "  SPOTIFY_CLIENT_ID: '${{ secrets.SPOTIFY_CLIENT_ID }}'," >> electron/env.js
+          echo "  SPOTIFY_REDIRECT_URL: '${{ secrets.SPOTIFY_REDIRECT_URL }}'," >> electron/env.js
+          echo "  SPOTIFY_REDIRECT_PORT: ${{
+            secrets.SPOTIFY_REDIRECT_PORT
+          }}" >> electron/env.js
+          echo "};" >> electron/env.js
 
       # --- 6. Sync version from tag ---
       - name: Sync version from tag (Linux/macOS)

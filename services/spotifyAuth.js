@@ -4,6 +4,7 @@ import { shell } from "electron";
 import axios from "axios";
 import { default as cuid } from "cuid";
 import { saveTokens } from "./spotifyTokens.js";
+import { ENV } from "../env.js";
 
 let inflightAuth = null;
 let activeServer = null;
@@ -45,20 +46,18 @@ export async function startSpotifyAuth() {
     return inflightAuth;
   }
 
-  const clientId = process.env.VITE_SPOTIFY_CLIENT_ID;
+  const clientId = ENV.SPOTIFY_CLIENT_ID;
   if (!clientId) {
     throw new Error("Missing SPOTIFY_CLIENT_ID env variable");
   }
 
-  const parsedPort = Number.parseInt(process.env.SPOTIFY_REDIRECT_PORT, 10);
+  const parsedPort = ENV.SPOTIFY_REDIRECT_PORT;
   const redirectPort =
     Number.isFinite(parsedPort) && parsedPort > 0 && parsedPort < 65536
       ? parsedPort
       : 4370;
   const redirectHost = process.env.SPOTIFY_REDIRECT_HOST || "localhost";
-  const redirectUri =
-    process.env.SPOTIFY_REDIRECT_URL ||
-    `http://127.0.0.1:4370/callback`;
+  const redirectUri = ENV.SPOTIFY_REDIRECT_URL;
   const verifier = generateVerifier();
   const codeChallenge = challenge(verifier);
   const state = cuid();

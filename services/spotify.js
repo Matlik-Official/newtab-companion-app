@@ -27,7 +27,7 @@ export function createSpotifyService() {
     },
     async getNowPlaying() {
       const token = await ensureAccessToken({
-        clientId: process.env.VITE_SPOTIFY_CLIENT_ID
+        clientId: process.env.SPOTIFY_CLIENT_ID
       });
       if (!token) {
         console.warn(
