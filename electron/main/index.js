@@ -137,7 +137,7 @@ function createWindow() {
     if (isDev) {
       mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
     } else {
-      const indexPath = path.join(app.getAppPath(), "dist", "index.html");
+      const indexPath = path.join(app.getAppPath(), "renderer", "index.html");
       mainWindow.loadFile(indexPath);
     }
   }
