@@ -9,6 +9,7 @@ export default defineConfig({
     strictPort: true
   },
   build: {
-    outDir: "renderer"
+    outDir: "renderer",
+    emptyOutDir: true,
   }
 });
