@@ -29,20 +29,23 @@
       "services/**/*",
       "state/**/*",
       "assets/**/*",
+      "preload/**/*",
       "package.json"
     ],
+    "asar": true,
     "asarUnpack": [
-      "**/node_modules/keytar/build/Release/*.node"
+      "node_modules/keytar/**/*"
     ],
     "extraResources": [
       {
-        "from": "node_modules/keytar/build/Release",
-        "to": "keytar",
+        "from": "node_modules/keytar/build/Release/",
+        "to": "build/Release",
         "filter": [
           "*.node"
         ]
       }
     ],
+    "npmRebuild": true,
     "win": {
       "target": [
         "nsis"
