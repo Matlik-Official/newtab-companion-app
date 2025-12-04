@@ -16,35 +16,51 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
+      # --- 1. Checkout code ---
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # --- 2. Setup Node ---
       - name: Use Node 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
+      # --- 3. Install dependencies cleanly ---
       - name: Install dependencies
         run: npm ci
 
+      # --- 4. Export secrets to ENV ---
       - name: Set environment variables
         run: |
           echo "SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}" >> $GITHUB_ENV
           echo "SPOTIFY_REDIRECT_URL=${{ secrets.SPOTIFY_REDIRECT_URL }}" >> $GITHUB_ENV
           echo "SPOTIFY_REDIRECT_PORT=${{ secrets.SPOTIFY_REDIRECT_PORT }}" >> $GITHUB_ENV
 
-      - name: Build Electron App
-        run: npm run build && npx electron-builder --publish never
+      # --- 5. Sync version from tag (v1.0.11 → 1.0.11) ---
+      - name: Sync version from tag
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          echo "Setting version to $TAG"
+          npm version --no-git-tag-version $TAG
 
+      # --- 6. Build Electron app ---
+      - name: Build Electron App
+        run: |
+          npm run build
+          npx electron-builder --publish never
+
+      # --- 7. Upload artifacts to GitHub Release ---
       - name: Upload Release Artifacts
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            dist/**/*.exe
             dist/**/*.dmg
             dist/**/*.zip
-            dist/**/*.exe
             dist/**/*.AppImage
             dist/**/*.snap
+            dist/**/*.deb
             dist/**/*blockmap
             dist/**/*.yml
         env:

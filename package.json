@@ -18,6 +18,7 @@
   "build": {
     "appId": "com.matlikofficial.newtabcompanion",
     "productName": "Newtab Companion",
+    "icon": "electron/assets/logo.png",
     "directories": {
       "output": "dist"
     },
@@ -32,19 +33,16 @@
       "package.json"
     ],
     "win": {
-      "target": [
-        "nsis"
-      ]
+      "target": ["nsis"],
+      "icon": "electron/assets/logo.png"
     },
     "linux": {
-      "target": [
-        "AppImage"
-      ]
+      "target": ["AppImage"],
+      "icon": "electron/assets/logo.png"
     },
     "mac": {
-      "target": [
-        "dmg"
-      ]
+      "target": ["dmg"],
+      "icon": "electron/assets/logo.png"
     }
   },
   "dependencies": {
