@@ -11,6 +11,9 @@ import { createPlaybackEngine } from "../../state/engine.js";
 import { eventBus, EVENTS } from "../../state/events.js";
 import { createNowPlayingStore } from "../../state/nowPlayingStore.js";
 import { createSettingsStore } from "../../state/settingsStore.js";
+import keytar from "keytar";
+
+console.log(await keytar.getPassword("newtab-companion-spotify", "spotify-credentials"));
 
 // Ensure process.env is populated for all downstream modules in production.
 process.env.SPOTIFY_CLIENT_ID = ENV.SPOTIFY_CLIENT_ID;

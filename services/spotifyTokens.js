@@ -1,44 +1,59 @@
-import keytar from "keytar";
+// --- spotifyTokens.js (SAFE FILE STORAGE VERSION) ---
+import fs from "fs";
+import path from "path";
 import axios from "axios";
+import { app } from "electron";
 
-const TOKEN_SERVICE = "newtab-companion-spotify";
-const TOKEN_ACCOUNT = "spotify-credentials";
+const TOKEN_PATH = path.join(app.getPath("userData"), "spotify-tokens.json");
 
-// REMOVE envTokens — Electron builds should NOT read tokens from env
-// Always use keytar for stored tokens
-
-export async function saveTokens(payload) {
-  await keytar.setPassword(
-    TOKEN_SERVICE,
-    TOKEN_ACCOUNT,
-    JSON.stringify(payload)
-  );
-}
-
-export async function getStoredTokens() {
+function readTokenFile() {
   try {
-    const raw = await keytar.getPassword(TOKEN_SERVICE, TOKEN_ACCOUNT);
-    if (!raw) return null;
+    if (!fs.existsSync(TOKEN_PATH)) return null;
+    const raw = fs.readFileSync(TOKEN_PATH, "utf8");
     return JSON.parse(raw);
   } catch (err) {
-    console.warn("[spotify] failed to read tokens", err);
+    console.warn("[spotify] failed to read token file", err);
     return null;
   }
 }
 
+function writeTokenFile(data) {
+  try {
+    fs.writeFileSync(TOKEN_PATH, JSON.stringify(data, null, 2), "utf8");
+  } catch (err) {
+    console.warn("[spotify] failed to write token file", err);
+  }
+}
+
+export async function saveTokens({ accessToken, refreshToken, expiresAt }) {
+  writeTokenFile({ accessToken, refreshToken, expiresAt });
+}
+
+export async function getStoredTokens() {
+  return readTokenFile();
+}
+
 export async function hasTokens() {
-  const tokens = await getStoredTokens();
-  return !!tokens?.accessToken;
+  const t = readTokenFile();
+  return !!t?.accessToken;
+}
+
+export async function clearTokens() {
+  try {
+    fs.unlinkSync(TOKEN_PATH);
+  } catch (_) {
+    /* ignore */
+  }
 }
 
 export async function ensureAccessToken({ clientId }) {
-  const tokens = await getStoredTokens();
+  const tokens = readTokenFile();
   if (!tokens) return null;
 
   const { accessToken, refreshToken, expiresAt } = tokens;
-  const now = Date.now();
 
-  if (accessToken && (!expiresAt || expiresAt > now + 15000)) {
+  // still valid
+  if (accessToken && (!expiresAt || expiresAt > Date.now() + 15000)) {
     return accessToken;
   }
 
@@ -48,40 +63,29 @@ export async function ensureAccessToken({ clientId }) {
     const form = new URLSearchParams({
       grant_type: "refresh_token",
       refresh_token: refreshToken,
-      client_id: clientId,
+      client_id: clientId
     });
 
     const resp = await axios.post(
       "https://accounts.spotify.com/api/token",
       form
     );
+
     const nextAccess = resp.data.access_token;
     const nextRefresh = resp.data.refresh_token || refreshToken;
-    const expiresAtNew = resp.data.expires_in
+    const nextExpiresAt = resp.data.expires_in
       ? Date.now() + resp.data.expires_in * 1000
       : null;
 
-    await saveTokens({
+    writeTokenFile({
       accessToken: nextAccess,
       refreshToken: nextRefresh,
-      expiresAt: expiresAtNew,
+      expiresAt: nextExpiresAt
     });
 
     return nextAccess;
   } catch (err) {
-    console.warn(
-      "[spotify] refresh failed",
-      err?.response?.status,
-      err?.response?.data
-    );
+    console.warn("[spotify] refresh failed", err?.response?.status, err?.response?.data);
     return null;
-  }
-}
-
-export async function clearTokens() {
-  try {
-    await keytar.deletePassword(TOKEN_SERVICE, TOKEN_ACCOUNT);
-  } catch (err) {
-    console.warn("[spotify] failed to clear tokens", err);
   }
 }
