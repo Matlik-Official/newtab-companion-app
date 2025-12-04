@@ -1,64 +1,52 @@
-// --- spotifyTokens.js (SAFE FILE STORAGE VERSION) ---
-import fs from "fs";
-import path from "path";
+import fs from "node:fs/promises";
+import path from "node:path";
 import axios from "axios";
 import { app } from "electron";
 
-const TOKEN_PATH = path.join(app.getPath("userData"), "spotify-tokens.json");
+const TOKEN_FILENAME = "spotify-tokens.json";
 
-function readTokenFile() {
+function tokenFilePath() {
+  return path.join(app.getPath("userData"), TOKEN_FILENAME);
+}
+
+export async function saveTokens(payload) {
   try {
-    if (!fs.existsSync(TOKEN_PATH)) return null;
-    const raw = fs.readFileSync(TOKEN_PATH, "utf8");
-    return JSON.parse(raw);
+    await fs.writeFile(tokenFilePath(), JSON.stringify(payload, null, 2), "utf8");
   } catch (err) {
-    console.warn("[spotify] failed to read token file", err);
+    console.warn("[spotify] failed to save tokens:", err);
+  }
+}
+
+export async function getStoredTokens() {
+  try {
+    const file = tokenFilePath();
+    const content = await fs.readFile(file, "utf8");
+    return JSON.parse(content);
+  } catch {
     return null;
   }
 }
 
-function writeTokenFile(data) {
-  try {
-    fs.writeFileSync(TOKEN_PATH, JSON.stringify(data, null, 2), "utf8");
-  } catch (err) {
-    console.warn("[spotify] failed to write token file", err);
-  }
-}
-
-export async function saveTokens({ accessToken, refreshToken, expiresAt }) {
-  writeTokenFile({ accessToken, refreshToken, expiresAt });
-}
-
-export async function getStoredTokens() {
-  return readTokenFile();
-}
-
 export async function hasTokens() {
-  const t = readTokenFile();
+  const t = await getStoredTokens();
   return !!t?.accessToken;
 }
 
-export async function clearTokens() {
-  try {
-    fs.unlinkSync(TOKEN_PATH);
-  } catch (_) {
-    /* ignore */
-  }
-}
-
 export async function ensureAccessToken({ clientId }) {
-  const tokens = readTokenFile();
+  const tokens = await getStoredTokens();
   if (!tokens) return null;
 
   const { accessToken, refreshToken, expiresAt } = tokens;
+  const now = Date.now();
 
-  // still valid
-  if (accessToken && (!expiresAt || expiresAt > Date.now() + 15000)) {
+  // If still valid → return directly
+  if (accessToken && expiresAt && expiresAt > now + 15_000) {
     return accessToken;
   }
 
   if (!refreshToken) return accessToken || null;
 
+  // Refresh using Spotify
   try {
     const form = new URLSearchParams({
       grant_type: "refresh_token",
@@ -66,26 +54,29 @@ export async function ensureAccessToken({ clientId }) {
       client_id: clientId
     });
 
-    const resp = await axios.post(
-      "https://accounts.spotify.com/api/token",
-      form
-    );
+    const resp = await axios.post("https://accounts.spotify.com/api/token", form);
 
     const nextAccess = resp.data.access_token;
     const nextRefresh = resp.data.refresh_token || refreshToken;
-    const nextExpiresAt = resp.data.expires_in
+    const nextExpires = resp.data.expires_in
       ? Date.now() + resp.data.expires_in * 1000
       : null;
 
-    writeTokenFile({
+    await saveTokens({
       accessToken: nextAccess,
       refreshToken: nextRefresh,
-      expiresAt: nextExpiresAt
+      expiresAt: nextExpires
     });
 
     return nextAccess;
   } catch (err) {
-    console.warn("[spotify] refresh failed", err?.response?.status, err?.response?.data);
+    console.warn("[spotify] refresh failed:", err.response?.status, err.response?.data);
     return null;
   }
+}
+
+export async function clearTokens() {
+  try {
+    await fs.unlink(tokenFilePath());
+  } catch {}
 }
