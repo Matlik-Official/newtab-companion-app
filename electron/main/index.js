@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, Tray, Menu } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createApiServer } from "../../api/server.js";
@@ -23,7 +23,59 @@ const services = [spotify, cider];
 let settingsStore;
 let apiServer;
 let currentPort;
+let tray = null;
 
+async function refreshTrayMenu() {
+  if (!tray || !settingsStore) return;
+  const settings = await settingsStore.get();
+  const np = nowPlayingStore.get();
+  const nowPlayingLabel = np?.title
+    ? `${np.title} — ${np.artist || ""}`.trim()
+    : "Nothing playing";
+  const spotifyStatus = settings?.preferSpotify
+    ? np?.source === "spotify"
+      ? "Active"
+      : "Enabled"
+    : "Disabled";
+  const ciderStatus = settings?.preferCider
+    ? np?.source === "cider"
+      ? "Active"
+      : "Enabled"
+    : "Disabled";
+
+  const contextMenu = Menu.buildFromTemplate([
+    { label: `Now: ${nowPlayingLabel}`, enabled: false },
+    { label: `Spotify: ${spotifyStatus}`, enabled: false },
+    { label: `Cider: ${ciderStatus}`, enabled: false },
+    { type: "separator" },
+    {
+      label: "Show",
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+        }
+      }
+    },
+    {
+      label: "Hide",
+      click: () => {
+        if (mainWindow) {
+          mainWindow.hide();
+        }
+      }
+    },
+    { type: "separator" },
+    {
+      label: "Quit",
+      click: () => {
+        app.isQuiting = true;
+        app.quit();
+      }
+    }
+  ]);
+  tray.setToolTip(`Now Playing Companion — ${nowPlayingLabel}`);
+  tray.setContextMenu(contextMenu);
+}
 async function refreshNowPlayingOnce() {
   try {
     const spotifyService = services.find((s) => s.id === "spotify");
@@ -54,6 +106,18 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       devTools: true
+    }
+  });
+
+  mainWindow.on("minimize", (event) => {
+    event.preventDefault();
+    mainWindow.hide();
+  });
+
+  mainWindow.on("close", (event) => {
+    if (!app.isQuiting) {
+      event.preventDefault();
+      mainWindow.hide();
     }
   });
 
@@ -93,10 +157,18 @@ async function bootstrap() {
   const settings = await settingsStore.get();
   await startApi(settings.apiPort);
 
+  const trayIcon = path.join(__dirname, "..", "assets", "logo.png");
+  tray = new Tray(trayIcon);
+  await refreshTrayMenu();
+  tray.on("click", () => {
+    mainWindow.show();
+  });
+
   eventBus.on(EVENTS.NOW_PLAYING, (payload) => {
     BrowserWindow.getAllWindows().forEach((win) =>
       win.webContents.send("now-playing", payload)
     );
+    refreshTrayMenu();
   });
 
   eventBus.on(EVENTS.SETTINGS_UPDATED, async (next) => {
@@ -106,6 +178,7 @@ async function bootstrap() {
     if (next.apiPort && next.apiPort !== currentPort) {
       await startApi(next.apiPort);
     }
+    refreshTrayMenu();
   });
 
   ipcMain.handle("ping", () => "Pong from Electron main process.");
@@ -123,6 +196,7 @@ async function bootstrap() {
   ipcMain.handle("spotify:logout", async () => {
     await clearTokens();
     nowPlayingStore.reset();
+    refreshTrayMenu();
     return { ok: true };
   });
   ipcMain.handle("window:minimize", () => {
