@@ -83,6 +83,7 @@ jobs:
           files: |
             dist/**/*.exe
             dist/**/*.dmg
+            dist/**/*.tar.gz
             dist/**/*.zip
             dist/**/*.AppImage
             dist/**/*.snap
