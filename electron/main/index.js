@@ -63,7 +63,7 @@ async function refreshTrayMenu() {
         if (mainWindow) {
           mainWindow.show();
         }
-      }
+      },
     },
     {
       label: "Hide",
@@ -71,7 +71,7 @@ async function refreshTrayMenu() {
         if (mainWindow) {
           mainWindow.hide();
         }
-      }
+      },
     },
     { type: "separator" },
     {
@@ -79,8 +79,8 @@ async function refreshTrayMenu() {
       click: () => {
         app.isQuiting = true;
         app.quit();
-      }
-    }
+      },
+    },
   ]);
   tray.setToolTip(`Now Playing Companion — ${nowPlayingLabel}`);
   tray.setContextMenu(contextMenu);
@@ -114,8 +114,8 @@ function createWindow() {
       preload: path.join(__dirname, "..", "preload", "index.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      devTools: true
-    }
+      devTools: true,
+    },
   });
 
   mainWindow.on("minimize", (event) => {
@@ -134,8 +134,12 @@ function createWindow() {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
     // mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
-    const indexPath = path.join(__dirname, "..", "..", "renderer", "index.html");
-    mainWindow.loadFile(indexPath);
+    if (isDev) {
+      mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+    } else {
+      const indexPath = path.join(app.getAppPath(), "dist", "index.html");
+      mainWindow.loadFile(indexPath);
+    }
   }
 }
 
@@ -149,7 +153,7 @@ async function bootstrap() {
   const engine = createPlaybackEngine({
     services,
     nowPlayingStore,
-    getSettings: () => settingsStore.get()
+    getSettings: () => settingsStore.get(),
   });
   engine.start();
 
