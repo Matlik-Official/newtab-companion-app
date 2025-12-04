@@ -4,7 +4,7 @@ import { shell } from "electron";
 import axios from "axios";
 import { default as cuid } from "cuid";
 import { saveTokens } from "./spotifyTokens.js";
-import { ENV } from "../env.js";
+import { ENV } from "../electron/env.js";
 
 let inflightAuth = null;
 let activeServer = null;
