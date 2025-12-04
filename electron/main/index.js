@@ -11,10 +11,13 @@ import { createPlaybackEngine } from "../../state/engine.js";
 import { eventBus, EVENTS } from "../../state/events.js";
 import { createNowPlayingStore } from "../../state/nowPlayingStore.js";
 import { createSettingsStore } from "../../state/settingsStore.js";
+import updater from "electron-updater";
 import AutoLaunch from "auto-launch";
 import keytar from "keytar";
 
 console.log(await keytar.getPassword("newtab-companion-spotify", "spotify-credentials"));
+
+const { autoUpdater } = updater;
 
 // Ensure process.env is populated for all downstream modules in production.
 process.env.SPOTIFY_CLIENT_ID = ENV.SPOTIFY_CLIENT_ID;
@@ -38,6 +41,7 @@ let apiServer;
 let currentPort;
 let tray = null;
 let autoLauncher = null;
+let updateInterval = null;
 
 function getAutoLauncher() {
   if (autoLauncher) return autoLauncher;
@@ -65,6 +69,51 @@ async function syncAutoLaunch(enabled) {
   } catch (err) {
     console.warn("[auto-launch] failed to sync", err);
   }
+}
+
+function broadcast(channel, payload) {
+  BrowserWindow.getAllWindows().forEach((win) => {
+    try {
+      win.webContents.send(channel, payload);
+    } catch (err) {
+      console.warn(`[broadcast:${channel}] failed`, err);
+    }
+  });
+}
+
+function setupAutoUpdater() {
+  if (!app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on("checking-for-update", () =>
+    broadcast("update-status", { status: "checking" })
+  );
+  autoUpdater.on("update-available", (info) =>
+    broadcast("update-status", { status: "available", info })
+  );
+  autoUpdater.on("update-not-available", (info) =>
+    broadcast("update-status", { status: "none", info })
+  );
+  autoUpdater.on("error", (err) =>
+    broadcast("update-status", { status: "error", message: err?.message })
+  );
+  autoUpdater.on("download-progress", (progressObj) =>
+    broadcast("update-status", { status: "downloading", progress: progressObj })
+  );
+  autoUpdater.on("update-downloaded", (info) =>
+    broadcast("update-status", { status: "downloaded", info })
+  );
+
+  // Kick off initial check and a periodic background check (every 4 hours).
+  autoUpdater.checkForUpdatesAndNotify().catch((err) =>
+    console.warn("[auto-updater] initial check failed", err)
+  );
+  updateInterval = setInterval(() => {
+    autoUpdater.checkForUpdates().catch((err) =>
+      console.warn("[auto-updater] periodic check failed", err)
+    );
+  }, 4 * 60 * 60 * 1000);
 }
 
 async function refreshTrayMenu() {
@@ -206,6 +255,8 @@ async function bootstrap() {
     mainWindow.show();
   });
 
+  setupAutoUpdater();
+
   eventBus.on(EVENTS.NOW_PLAYING, (payload) => {
     BrowserWindow.getAllWindows().forEach((win) =>
       win.webContents.send("now-playing", payload)
@@ -242,6 +293,29 @@ async function bootstrap() {
     refreshTrayMenu();
     return { ok: true };
   });
+  ipcMain.handle("app:version", () => app.getVersion());
+  ipcMain.handle("update:check", async () => {
+    if (!app.isPackaged) {
+      return { ok: false, message: "Updates only run in packaged builds." };
+    }
+    try {
+      const res = await autoUpdater.checkForUpdates();
+      return { ok: true, info: res?.updateInfo };
+    } catch (err) {
+      return { ok: false, message: err?.message || "Update check failed" };
+    }
+  });
+  ipcMain.handle("update:install", async () => {
+    if (!app.isPackaged) {
+      return { ok: false, message: "Updates only run in packaged builds." };
+    }
+    try {
+      autoUpdater.quitAndInstall();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, message: err?.message || "Install failed" };
+    }
+  });
   ipcMain.handle("window:minimize", () => {
     const win = BrowserWindow.getFocusedWindow();
     if (win) win.minimize();
@@ -276,5 +350,12 @@ app.whenReady().then(async () => {
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
+  }
+});
+
+app.on("before-quit", () => {
+  if (updateInterval) {
+    clearInterval(updateInterval);
+    updateInterval = null;
   }
 });

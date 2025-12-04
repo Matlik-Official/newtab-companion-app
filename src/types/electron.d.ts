@@ -24,11 +24,15 @@ export interface ElectronAPI {
   startSpotifyLogin: () => Promise<{ accessToken: string; refreshToken?: string; expiresAt?: number }>;
   spotifyStatus: () => Promise<{ connected: boolean }>;
   spotifyLogout: () => Promise<{ ok: boolean }>;
+  appVersion: () => Promise<string>;
+  checkForUpdates: () => Promise<{ ok: boolean; info?: unknown; message?: string }>;
+  installUpdate: () => Promise<{ ok: boolean; message?: string }>;
   windowMinimize: () => Promise<void>;
   windowMaximize: () => Promise<void>;
   windowClose: () => Promise<void>;
   onNowPlaying: (cb: (data: NowPlaying) => void) => () => void;
   onSettingsUpdated: (cb: (data: Settings) => void) => () => void;
+  onUpdateStatus: (cb: (data: unknown) => void) => () => void;
 }
 
 declare global {

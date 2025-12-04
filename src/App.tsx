@@ -28,6 +28,8 @@ export default function App() {
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState("Idle");
+  const [appVersion, setAppVersion] = useState<string | null>(null);
 
   useEffect(() => {
     if (!api) {
@@ -40,7 +42,25 @@ export default function App() {
       setNowPlaying(np);
       if (np?.source) setServiceTracks((prev) => ({ ...prev, [np.source]: np }));
     });
+    api.appVersion?.().then((v) => setAppVersion(v || null));
     api.spotifyStatus?.().then((s) => setSpotifyConnected(!!s?.connected));
+    const offUpdate = api.onUpdateStatus?.((data: any) => {
+      if (!data) return;
+      const state = data.status;
+      if (state === "downloading" && data.progress?.percent != null) {
+        setUpdateStatus(`Downloading ${Math.round(data.progress.percent)}%`);
+      } else if (state === "downloaded") {
+        setUpdateStatus("Update ready - restart to install");
+      } else if (state === "available") {
+        setUpdateStatus("Update available - downloading");
+      } else if (state === "checking") {
+        setUpdateStatus("Checking for updates...");
+      } else if (state === "none") {
+        setUpdateStatus("Up to date");
+      } else if (state === "error") {
+        setUpdateStatus("Update error");
+      }
+    });
 
     const offNowPlaying = api.onNowPlaying?.((data) => {
       setNowPlaying(data);
@@ -52,6 +72,7 @@ export default function App() {
     return () => {
       offNowPlaying?.();
       offSettings?.();
+      offUpdate?.();
     };
   }, [api]);
 
@@ -280,9 +301,14 @@ export default function App() {
                 </p>
                 <p className="text-lg font-semibold">Settings</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setShowSettings(false)}>
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                {appVersion && (
+                  <span className="text-xs text-slate-400">v{appVersion}</span>
+                )}
+                <Button variant="outline" size="sm" onClick={() => setShowSettings(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-200">
@@ -342,6 +368,33 @@ export default function App() {
                   onClick={() => toggleSetting("autostart")}
                 >
                   {settings.autostart ? "On" : "Off"}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col">
+                  <span>Updates</span>
+                  <span className="text-xs text-slate-400">{updateStatus}</span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setUpdateStatus("Checking for updates...");
+                    api
+                      ?.checkForUpdates?.()
+                      .then((res) => {
+                        if (!res?.ok) {
+                          setUpdateStatus(res?.message || "Update check failed");
+                        } else if (res?.info?.version) {
+                          setUpdateStatus(`Latest: v${res.info.version}`);
+                        } else {
+                          setUpdateStatus("Up to date");
+                        }
+                      })
+                      .catch(() => setUpdateStatus("Update check failed"));
+                  }}
+                >
+                  Check for Updates
                 </Button>
               </div>
             </div>
