@@ -48,7 +48,20 @@
         "dmg"
       ],
       "icon": "electron/assets/logo.png"
-    }
+    },
+    "npmRebuild": true,
+    "asarUnpack": [
+      "**/keytar/**"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/keytar/build/Release",
+        "to": "keytar",
+        "filter": [
+          "*.node"
+        ]
+      }
+    ]
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
