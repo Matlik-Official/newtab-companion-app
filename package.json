@@ -22,7 +22,7 @@
       "output": "dist"
     },
     "files": [
-      "dist/**/*",
+      "renderer/**/*",
       "electron/**/*",
       "api/**/*",
       "services/**/*",

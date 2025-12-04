@@ -34,7 +34,7 @@ jobs:
           echo "SPOTIFY_REDIRECT_PORT=${{ secrets.SPOTIFY_REDIRECT_PORT }}" >> $GITHUB_ENV
 
       - name: Build Electron App
-        run: npx electron-builder --publish never
+        run: npm run build && npx electron-builder --publish never
 
       - name: Upload Release Artifacts
         uses: softprops/action-gh-release@v2
