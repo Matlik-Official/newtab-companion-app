@@ -11,6 +11,7 @@ import { createPlaybackEngine } from "../../state/engine.js";
 import { eventBus, EVENTS } from "../../state/events.js";
 import { createNowPlayingStore } from "../../state/nowPlayingStore.js";
 import { createSettingsStore } from "../../state/settingsStore.js";
+import AutoLaunch from "auto-launch";
 import keytar from "keytar";
 
 console.log(await keytar.getPassword("newtab-companion-spotify", "spotify-credentials"));
@@ -36,6 +37,35 @@ let settingsStore;
 let apiServer;
 let currentPort;
 let tray = null;
+let autoLauncher = null;
+
+function getAutoLauncher() {
+  if (autoLauncher) return autoLauncher;
+  autoLauncher = new AutoLaunch({
+    name: "Newtab Companion",
+    path: process.execPath,
+    isHidden: true
+  });
+  return autoLauncher;
+}
+
+async function syncAutoLaunch(enabled) {
+  // Only apply in packaged app to avoid dev-path noise.
+  if (!app.isPackaged) return;
+  try {
+    const launcher = getAutoLauncher();
+    const isEnabled = await launcher.isEnabled();
+    if (enabled && !isEnabled) {
+      await launcher.enable();
+      console.log("[auto-launch] enabled");
+    } else if (!enabled && isEnabled) {
+      await launcher.disable();
+      console.log("[auto-launch] disabled");
+    }
+  } catch (err) {
+    console.warn("[auto-launch] failed to sync", err);
+  }
+}
 
 async function refreshTrayMenu() {
   if (!tray || !settingsStore) return;
@@ -166,6 +196,7 @@ async function bootstrap() {
   };
 
   const settings = await settingsStore.get();
+  await syncAutoLaunch(settings.autostart);
   await startApi(settings.apiPort);
 
   const trayIcon = path.join(__dirname, "..", "assets", "logo.png");
@@ -189,6 +220,7 @@ async function bootstrap() {
     if (next.apiPort && next.apiPort !== currentPort) {
       await startApi(next.apiPort);
     }
+    await syncAutoLaunch(next.autostart);
     refreshTrayMenu();
   });
 
