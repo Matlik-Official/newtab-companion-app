@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies cleanly
         run: |
-          rm -rf node_modules
+          npx rimraf node_modules
           npm ci
 
       - name: Setup environment variables
