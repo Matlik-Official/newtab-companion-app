@@ -57,7 +57,7 @@ export async function startSpotifyAuth() {
       ? parsedPort
       : 4370;
   const redirectHost = process.env.SPOTIFY_REDIRECT_HOST || "localhost";
-  const redirectUri = ENV.SPOTIFY_REDIRECT_URL;
+  const redirectUri = ENV.SPOTIFY_REDIRECT_URL || 'http://127.0.0.1:4370/callback';
   const verifier = generateVerifier();
   const codeChallenge = challenge(verifier);
   const state = cuid();
