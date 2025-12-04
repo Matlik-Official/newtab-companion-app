@@ -50,7 +50,11 @@ export async function startSpotifyAuth() {
     throw new Error("Missing SPOTIFY_CLIENT_ID env variable");
   }
 
-  const redirectPort = Number(process.env.SPOTIFY_REDIRECT_PORT || 4370);
+  const parsedPort = Number.parseInt(process.env.SPOTIFY_REDIRECT_PORT, 10);
+  const redirectPort =
+    Number.isFinite(parsedPort) && parsedPort > 0 && parsedPort < 65536
+      ? parsedPort
+      : 4370;
   const redirectHost = process.env.SPOTIFY_REDIRECT_HOST || "localhost";
   const redirectUri =
     process.env.SPOTIFY_REDIRECT_URL ||
