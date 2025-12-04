@@ -9,7 +9,9 @@ import {
   SlidersHorizontal,
   Minus,
   Square,
-  XCircle
+  XCircle,
+  Outdent,
+  ExternalLink
 } from "lucide-react";
 import type { NowPlaying, Settings } from "./types/electron";
 import { Button } from "./components/ui/button";
@@ -119,6 +121,24 @@ export default function App() {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 no-drag"
+            asChild
+          >
+            <a
+              href="https://newtab.matlikofficial.com"
+              className="gap-2"
+              onClick={(e) => {
+                e.preventDefault();
+                api?.openExternal?.("https://newtab.matlikofficial.com");
+              }}
+            >
+              <ExternalLink className="h-4 w-4" />
+              NewTab
+            </a>
+          </Button>
           <Button
             variant="outline"
             size="sm"

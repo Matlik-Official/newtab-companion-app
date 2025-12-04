@@ -1,5 +1,5 @@
 import { ENV } from "../env.js";
-import { app, BrowserWindow, ipcMain, Tray, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, Tray, Menu, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createApiServer } from "../../api/server.js";
@@ -186,7 +186,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 720,
-    minWidth: 600,
+    minWidth: 700,
     minHeight: 800,
     backgroundColor: "#0b1021",
     icon: path.join(__dirname, "..", "assets", "logo.png"),
@@ -315,6 +315,13 @@ async function bootstrap() {
     } catch (err) {
       return { ok: false, message: err?.message || "Install failed" };
     }
+  });
+  ipcMain.handle("open:external", (_evt, url) => {
+    if (!url || typeof url !== "string") {
+      return { ok: false, message: "Invalid URL" };
+    }
+    shell.openExternal(url);
+    return { ok: true };
   });
   ipcMain.handle("window:minimize", () => {
     const win = BrowserWindow.getFocusedWindow();
