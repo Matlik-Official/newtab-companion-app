@@ -35,10 +35,13 @@ export interface ElectronAPI {
   windowSetTrafficLights: (payload: {
     position?: { x: number; y: number };
     visible?: boolean;
-  }) => Promise<{ ok: boolean; message?: string }>;
+  }) => Promise<{ ok: boolean; message?: string; visible?: boolean; position?: { x: number; y: number } | null }>;
+  windowToggleTrafficLights: () => Promise<{ ok: boolean; message?: string; visible?: boolean; position?: { x: number; y: number } | null }>;
+  windowIsFullscreen: () => Promise<{ fullscreen: boolean }>;
   onNowPlaying: (cb: (data: NowPlaying) => void) => () => void;
   onSettingsUpdated: (cb: (data: Settings) => void) => () => void;
   onWindowTrafficLights: (cb: (data: { visible: boolean; position: { x: number; y: number } | null }) => void) => () => void;
+  onWindowFullscreen: (cb: (data: { fullscreen: boolean }) => void) => () => void;
   onUpdateStatus: (cb: (data: unknown) => void) => () => void;
 }
 

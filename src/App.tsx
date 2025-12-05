@@ -36,10 +36,11 @@ export default function App() {
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
   const [showNewTab, setShowNewTab] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [trafficLightsVisible, setTrafficLightsVisible] = useState<boolean>(true);
   const [trafficLightPosition, setTrafficLightPosition] = useState<{ x: number; y: number } | null>({
     x: 16,
-    y: 28
+    y: 20
   });
   const os = useOS();
 
@@ -90,17 +91,16 @@ export default function App() {
   }, [api]);
 
   useEffect(() => {
-    if (os !== "macOS" || !api) return;
-    api.windowTrafficLights?.().then((state) => {
-      if (!state) return;
-      setTrafficLightsVisible(!!state.visible);
-      if (state.position) setTrafficLightPosition(state.position);
-    });
-    const off = api.onWindowTrafficLights?.((state) => {
-      if (!state) return;
-      setTrafficLightsVisible(!!state.visible);
-      if (state.position) setTrafficLightPosition(state.position);
-    });
+    if (!api) return;
+    const handleFullscreen = (state: any) => {
+      const next = typeof state === "boolean" ? state : !!state?.fullscreen;
+      setIsFullscreen(next);
+      if (next && os === "macOS") {
+        setTrafficLightsVisible(false);
+      }
+    };
+    api.windowIsFullscreen?.().then(handleFullscreen);
+    const off = api.onWindowFullscreen?.((data) => handleFullscreen(data));
     return () => {
       off?.();
     };
@@ -108,12 +108,29 @@ export default function App() {
 
   useEffect(() => {
     if (os !== "macOS" || !api) return;
+    api.windowTrafficLights?.().then((state) => {
+      if (!state) return;
+      if (!isFullscreen) setTrafficLightsVisible(!!state.visible);
+      if (state.position) setTrafficLightPosition(state.position);
+    });
+    const off = api.onWindowTrafficLights?.((state) => {
+      if (!state) return;
+      if (!isFullscreen) setTrafficLightsVisible(!!state.visible);
+      if (state.position) setTrafficLightPosition(state.position);
+    });
+    return () => {
+      off?.();
+    };
+  }, [api, os, isFullscreen]);
+
+  useEffect(() => {
+    if (os !== "macOS" || !api || isFullscreen) return;
     // Hide macOS traffic lights while immersive screen is shown to mimic full-bleed view.
     if (showNewTab) {
       api.windowSetTrafficLights?.({ visible: false });
       setTrafficLightsVisible(false);
     } else {
-      const fallbackPosition = trafficLightPosition || { x: 16, y: 28 };
+      const fallbackPosition = trafficLightPosition || { x: 16, y: 20 };
       api.windowSetTrafficLights?.({ visible: true, position: fallbackPosition });
       api.windowTrafficLights?.().then((state) => {
         if (!state) return;
@@ -122,7 +139,7 @@ export default function App() {
         else setTrafficLightPosition(fallbackPosition);
       });
     }
-  }, [api, os, showNewTab, trafficLightPosition]);
+  }, [api, os, showNewTab, trafficLightPosition, isFullscreen]);
 
   const progress = useMemo(() => {
     if (!nowPlaying) return 0;

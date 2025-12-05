@@ -24,8 +24,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   windowClose: () => ipcRenderer.invoke("window:close"),
   windowTrafficLights: () => ipcRenderer.invoke("window:traffic-lights"),
   windowSetTrafficLights: (payload) => ipcRenderer.invoke("window:set-traffic-lights", payload),
+  windowToggleTrafficLights: () => ipcRenderer.invoke("window:toggle-traffic-lights"),
+  windowIsFullscreen: () => ipcRenderer.invoke("window:fullscreen"),
   onNowPlaying: createListener("now-playing"),
   onSettingsUpdated: createListener("settings-updated"),
   onWindowTrafficLights: createListener("window-traffic-lights"),
+  onWindowFullscreen: createListener("window-fullscreen"),
   onUpdateStatus: createListener("update-status")
 });

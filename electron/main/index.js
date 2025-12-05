@@ -1,5 +1,5 @@
 import { ENV } from "../env.js";
-import { app, BrowserWindow, ipcMain, Tray, Menu, shell } from "electron";
+import { app, BrowserWindow, ipcMain, Tray, Menu, shell, nativeImage } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createApiServer } from "../../api/server.js";
@@ -33,6 +33,11 @@ const REDIRECT_URL = process.env.SPOTIFY_REDIRECT_URL;
 const REDIRECT_PORT = parseInt(process.env.SPOTIFY_REDIRECT_PORT, 10) || 4370;
 
 let mainWindow;
+let fullscreenState = false;
+let trafficLightsState = {
+  visible: true,
+  position: { x: 16, y: 28 },
+};
 const nowPlayingStore = createNowPlayingStore(eventBus);
 const spotify = createSpotifyService();
 const cider = createCiderService();
@@ -82,26 +87,59 @@ function broadcast(channel, payload) {
   });
 }
 
-function getTrafficLightState(win = BrowserWindow.getFocusedWindow() || mainWindow) {
-  const positionRaw =
-    typeof win?.getTrafficLightPosition === "function"
-      ? win.getTrafficLightPosition()
-      : null;
-  const position = positionRaw || { x: 16, y: 28 };
-  const visible =
-    process.platform === "darwin"
-      ? (typeof win?.isFullScreen === "function" ? !win.isFullScreen() : true)
-      : false;
-  return { visible, position };
+function getActiveWindow() {
+  return (
+    BrowserWindow.getFocusedWindow() ||
+    mainWindow ||
+    BrowserWindow.getAllWindows()[0] ||
+    null
+  );
 }
 
-function emitTrafficLightState(win = BrowserWindow.getFocusedWindow() || mainWindow) {
-  if (!win) return;
-  try {
-    win.webContents.send("window-traffic-lights", getTrafficLightState(win));
-  } catch (err) {
-    console.warn("[traffic-lights] failed to emit", err);
+function readTrafficLightsState() {
+  if (!isMac) return { visible: false, position: null };
+  return {
+    visible: trafficLightsState.visible,
+    position: trafficLightsState.position,
+  };
+}
+
+function emitTrafficLightsState() {
+  broadcast("window-traffic-lights", readTrafficLightsState());
+}
+
+function applyTrafficLightsState(next = {}) {
+  if (!isMac) {
+    return { ok: false, message: "Traffic lights are only available on macOS." };
   }
+  const win = getActiveWindow();
+  if (!win) return { ok: false, message: "Window not ready." };
+
+  if (typeof next.visible === "boolean") {
+    trafficLightsState.visible = next.visible;
+    if (typeof win.setWindowButtonVisibility === "function") {
+      win.setWindowButtonVisibility(next.visible);
+    }
+  }
+  if (next.position) {
+    trafficLightsState.position = next.position;
+    if (typeof win.setTrafficLightPosition === "function") {
+      win.setTrafficLightPosition(next.position);
+    }
+  }
+  emitTrafficLightsState();
+  return { ok: true, ...readTrafficLightsState() };
+}
+
+function toggleTrafficLightsVisibility() {
+  return applyTrafficLightsState({ visible: !trafficLightsState.visible });
+}
+
+function emitFullscreenState(win = getActiveWindow()) {
+  const fullscreen = !!win?.isFullScreen?.();
+  fullscreenState = fullscreen;
+  broadcast("window-fullscreen", { fullscreen });
+  return fullscreen;
 }
 
 function setupAutoUpdater() {
@@ -213,18 +251,8 @@ function createWindow() {
     minHeight: 720,
     backgroundColor: "#0b1021",
     icon: path.join(__dirname, "..", "assets", "logo.png"),
-    frame: isMac, // hide native title bar buttons on Windows/Linux; keep default frame on macOS
-    titleBarStyle: isMac ? "hiddenInset" : "hidden",
-    ...(isMac
-      ? {
-          titleBarOverlay: {
-            color: "#0b1021",
-            symbolColor: "#ffffff",
-            height: 52,
-          },
-          trafficLightPosition: { x: 16, y: 28 },
-        }
-      : {}),
+    frame: false,
+    titleBarStyle: "hidden",
     webPreferences: {
       preload: path.join(__dirname, "..", "preload", "index.js"),
       contextIsolation: true,
@@ -232,6 +260,12 @@ function createWindow() {
       devTools: true,
     },
   });
+
+  if (isMac) {
+    applyTrafficLightsState(trafficLightsState);
+  }
+  emitTrafficLightsState();
+  emitFullscreenState(mainWindow);
 
   mainWindow.on("minimize", (event) => {
     event.preventDefault();
@@ -252,12 +286,8 @@ function createWindow() {
     mainWindow.loadFile(indexPath);
   }
 
-  mainWindow.once("ready-to-show", () => emitTrafficLightState(mainWindow));
-  mainWindow.on("enter-full-screen", () => emitTrafficLightState(mainWindow));
-  mainWindow.on("leave-full-screen", () => emitTrafficLightState(mainWindow));
-  mainWindow.on("show", () => emitTrafficLightState(mainWindow));
-  mainWindow.on("blur", () => emitTrafficLightState(mainWindow));
-  mainWindow.on("focus", () => emitTrafficLightState(mainWindow));
+  mainWindow.on("enter-full-screen", () => emitFullscreenState(mainWindow));
+  mainWindow.on("leave-full-screen", () => emitFullscreenState(mainWindow));
 }
 
 async function bootstrap() {
@@ -289,7 +319,8 @@ async function bootstrap() {
   await startApi(settings.apiPort);
 
   const trayIcon = path.join(__dirname, "..", "assets", "logo.png");
-  tray = new Tray(trayIcon);
+  const newTrayIcon = nativeImage.createFromPath(trayIcon).resize({ width: 16, height: 16 })
+  tray = new Tray(newTrayIcon);
   await refreshTrayMenu();
   tray.on("click", () => {
     mainWindow.show();
@@ -381,35 +412,14 @@ async function bootstrap() {
     const win = BrowserWindow.getFocusedWindow();
     if (win) win.close();
   });
-  ipcMain.handle("window:traffic-lights", () => getTrafficLightState());
-  ipcMain.handle("window:set-traffic-lights", (_evt, payload = {}) => {
-    const win = BrowserWindow.getFocusedWindow() || mainWindow;
-    if (process.platform !== "darwin") {
-      return { ok: false, message: "Traffic lights only exist on macOS" };
-    }
-    if (!win) return { ok: false, message: "No active window" };
-
-    const { position, visible } = payload;
-
-    if (position && typeof win.setTrafficLightPosition === "function") {
-      try {
-        win.setTrafficLightPosition(position);
-      } catch (err) {
-        return { ok: false, message: err?.message || "Failed to set position" };
-      }
-    }
-
-    if (typeof visible === "boolean" && typeof win.setWindowButtonVisibility === "function") {
-      try {
-        win.setWindowButtonVisibility(visible);
-      } catch (err) {
-        return { ok: false, message: err?.message || "Failed to set visibility" };
-      }
-    }
-
-    emitTrafficLightState(win);
-    return { ok: true };
-  });
+  ipcMain.handle("window:traffic-lights", () => readTrafficLightsState());
+  ipcMain.handle("window:set-traffic-lights", (_evt, payload) =>
+    applyTrafficLightsState(payload || {})
+  );
+  ipcMain.handle("window:toggle-traffic-lights", () => toggleTrafficLightsVisibility());
+  ipcMain.handle("window:fullscreen", () => ({
+    fullscreen: emitFullscreenState(getActiveWindow()),
+  }));
 }
 
 app.whenReady().then(async () => {
