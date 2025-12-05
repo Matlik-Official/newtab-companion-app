@@ -121,7 +121,7 @@ export default function App() {
   ) : (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <header className="flex select-none items-center justify-between bg-slate-950/80 p-4 backdrop-blur drag sticky top-0 z-10">
-        <div className={`flex items-center gap-3 text-sm text-slate-300 ${os == "macOS" && 'ml-14'}`}>
+        <div className={`flex items-center gap-3 text-sm text-slate-300 ${os == "macOS" && 'ml-[72px]'}`}>
           <img src="https://newtab.matlikofficial.com/logo.png" alt="NewTab Logo" className="h-9 w-9 rounded-sm" />
           <div className="text-left leading-tight">
             <p className="text-sm font-semibold">New Tab | Companion app</p>

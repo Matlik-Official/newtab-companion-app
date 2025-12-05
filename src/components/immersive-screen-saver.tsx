@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 
 type ImmersivePlayingProps = {
     setShowNewTab: React.Dispatch<React.SetStateAction<boolean>>;
-    nowPlaying: NowPlaying;
+    nowPlaying: NowPlaying | null;
 };
 
 export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: ImmersivePlayingProps) {

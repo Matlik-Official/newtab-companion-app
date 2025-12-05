@@ -192,6 +192,7 @@ function createWindow() {
     icon: path.join(__dirname, "..", "assets", "logo.png"),
     frame: false,
     titleBarStyle: "hidden",
+    trafficLightPosition: { x: 16, y: 28 },
     webPreferences: {
       preload: path.join(__dirname, "..", "preload", "index.js"),
       contextIsolation: true,
