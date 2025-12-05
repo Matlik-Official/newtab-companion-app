@@ -342,6 +342,45 @@ async function bootstrap() {
     const win = BrowserWindow.getFocusedWindow();
     if (win) win.close();
   });
+  ipcMain.handle("window:traffic-lights", () => {
+    const win = BrowserWindow.getFocusedWindow() || mainWindow;
+    const position =
+      typeof win?.getTrafficLightPosition === "function"
+        ? win.getTrafficLightPosition()
+        : null;
+    const visible =
+      process.platform === "darwin"
+        ? (typeof win?.isFullScreen === "function" ? !win.isFullScreen() : true)
+        : false;
+    return { visible, position };
+  });
+  ipcMain.handle("window:set-traffic-lights", (_evt, payload = {}) => {
+    const win = BrowserWindow.getFocusedWindow() || mainWindow;
+    if (process.platform !== "darwin") {
+      return { ok: false, message: "Traffic lights only exist on macOS" };
+    }
+    if (!win) return { ok: false, message: "No active window" };
+
+    const { position, visible } = payload;
+
+    if (position && typeof win.setTrafficLightPosition === "function") {
+      try {
+        win.setTrafficLightPosition(position);
+      } catch (err) {
+        return { ok: false, message: err?.message || "Failed to set position" };
+      }
+    }
+
+    if (typeof visible === "boolean" && typeof win.setWindowButtonVisibility === "function") {
+      try {
+        win.setWindowButtonVisibility(visible);
+      } catch (err) {
+        return { ok: false, message: err?.message || "Failed to set visibility" };
+      }
+    }
+
+    return { ok: true };
+  });
 }
 
 app.whenReady().then(async () => {

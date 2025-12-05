@@ -31,6 +31,11 @@ export interface ElectronAPI {
   windowMinimize: () => Promise<void>;
   windowMaximize: () => Promise<void>;
   windowClose: () => Promise<void>;
+  windowTrafficLights: () => Promise<{ visible: boolean; position: { x: number; y: number } | null }>;
+  windowSetTrafficLights: (payload: {
+    position?: { x: number; y: number };
+    visible?: boolean;
+  }) => Promise<{ ok: boolean; message?: string }>;
   onNowPlaying: (cb: (data: NowPlaying) => void) => () => void;
   onSettingsUpdated: (cb: (data: Settings) => void) => () => void;
   onUpdateStatus: (cb: (data: unknown) => void) => () => void;
