@@ -16,6 +16,7 @@ import {
 import type { NowPlaying, Settings } from "./types/electron";
 import { Button } from "./components/ui/button";
 import { useOS } from "./hooks/useOS";
+import ImmersivePlaying from "./components/immersive-playing";
 
 const fallbackArtwork =
   "https://dummyimage.com/320x320/0f172a/94a3b8.png&text=No+Artwork";
@@ -34,9 +35,9 @@ export default function App() {
   const [updateStatus, setUpdateStatus] = useState("Idle");
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
-  const [showNewTab, setShowNewTab] = useState<boolean>(false);
+  const [showNewTab, setShowNewTab] = useState<boolean>(true);
   const os = useOS();
-  
+
 
   useEffect(() => {
     if (!api) {
@@ -116,22 +117,7 @@ export default function App() {
   };
 
   return showNewTab ? (
-    <main className="min-h-screen w-full bg-slate-950 text-slate-50 flex flex-col">
-      <div className={`${os == "macOS" ? 'ml-16 w-[calc(90%)]' : 'w-[calc(95%)]'} h-fit p-1 drag absolute z-10 opacity-20 hover:opacity-80 transition-all`}>
-        <Button
-          variant="outline"
-          size="icon"
-          className="gap-2 no-drag scale-75 pointer-events-auto"
-          onClick={(e) => {
-            e.preventDefault();
-            setShowNewTab(!showNewTab);
-          }}
-        >
-          <X />
-        </Button>
-      </div>
-      <iframe src="https://newtab.matlikofficial.com" className="h-full flex-1"></iframe>
-    </main>
+    <ImmersivePlaying setShowNewTab={setShowNewTab} />
   ) : (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <header className="flex select-none items-center justify-between bg-slate-950/80 p-4 backdrop-blur drag sticky top-0 z-10">

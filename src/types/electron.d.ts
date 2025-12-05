@@ -41,3 +41,16 @@ declare global {
     electronAPI?: ElectronAPI;
   }
 }
+
+
+export interface ImageTypes {
+  id: number;
+  title: string;
+  description: string;
+  tags: string;
+  original_image: string;
+  thumbnail_image: string;
+  pixelated_image: string;
+  author: string;
+  author_profile: string;
+}
