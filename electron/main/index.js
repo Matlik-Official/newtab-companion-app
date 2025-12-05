@@ -36,7 +36,7 @@ let mainWindow;
 let fullscreenState = false;
 let trafficLightsState = {
   visible: true,
-  position: { x: 16, y: 28 },
+  position: { x: 22, y: 28 },
 };
 const nowPlayingStore = createNowPlayingStore(eventBus);
 const spotify = createSpotifyService();
@@ -98,6 +98,12 @@ function getActiveWindow() {
 
 function readTrafficLightsState() {
   if (!isMac) return { visible: false, position: null };
+  const win = getActiveWindow();
+  const actual =
+    win?.getWindowButtonPosition?.() || win?.getTrafficLightPosition?.();
+  if (actual) {
+    trafficLightsState.position = actual;
+  }
   return {
     visible: trafficLightsState.visible,
     position: trafficLightsState.position,
@@ -123,9 +129,16 @@ function applyTrafficLightsState(next = {}) {
   }
   if (next.position) {
     trafficLightsState.position = next.position;
-    if (typeof win.setTrafficLightPosition === "function") {
+    if (typeof win.setWindowButtonPosition === "function") {
+      win.setWindowButtonPosition(next.position);
+    } else if (typeof win.setTrafficLightPosition === "function") {
       win.setTrafficLightPosition(next.position);
     }
+  }
+  const actual =
+    win.getWindowButtonPosition?.() || win.getTrafficLightPosition?.();
+  if (actual) {
+    trafficLightsState.position = actual;
   }
   emitTrafficLightsState();
   return { ok: true, ...readTrafficLightsState() };
@@ -262,6 +275,11 @@ function createWindow() {
   });
 
   if (isMac) {
+    const initialPosition =
+      mainWindow.getWindowButtonPosition?.() || mainWindow.getTrafficLightPosition?.();
+    if (initialPosition) {
+      trafficLightsState.position = initialPosition;
+    }
     applyTrafficLightsState(trafficLightsState);
   }
   emitTrafficLightsState();

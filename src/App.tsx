@@ -39,8 +39,8 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [trafficLightsVisible, setTrafficLightsVisible] = useState<boolean>(true);
   const [trafficLightPosition, setTrafficLightPosition] = useState<{ x: number; y: number } | null>({
-    x: 16,
-    y: 20
+    x: 28,
+    y: 28
   });
   const os = useOS();
 
@@ -178,26 +178,19 @@ export default function App() {
   ) : (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <header className="relative flex select-none items-center justify-between bg-slate-950/80 p-4 backdrop-blur drag top-0 z-10">
-        {os === "macOS" && trafficLightsVisible && (
-          <div
-            className="absolute left-0 top-0 h-full no-drag"
-            style={{ width: `${(trafficLightPosition?.x ?? 16) + 64}px` }}
-            aria-hidden
-          />
-        )}
         <div
           className="flex items-center gap-3 text-sm text-slate-300"
           style={{
             marginLeft:
-              os === "macOS" && trafficLightsVisible
-                ? (trafficLightPosition?.x ?? 16) + 64
+              os === "macOS" && !isFullscreen
+                ? 100
                 : undefined,
           }}
         >
           <img src="https://newtab.matlikofficial.com/logo.png" alt="NewTab Logo" className="h-9 w-9 rounded-sm" />
           <div className="text-left leading-tight">
             <p className="text-sm font-semibold">New Tab | Companion app</p>
-            <p className="text-[11px] text-green-500 font-semibold">{status}</p>
+              <p className="text-[11px] text-green-500 font-semibold">{status}</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
