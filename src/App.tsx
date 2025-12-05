@@ -35,7 +35,7 @@ export default function App() {
   const [updateStatus, setUpdateStatus] = useState("Idle");
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
-  const [showNewTab, setShowNewTab] = useState<boolean>(false);
+  const [showNewTab, setShowNewTab] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [trafficLightsVisible, setTrafficLightsVisible] = useState<boolean>(true);
   const [trafficLightPosition, setTrafficLightPosition] = useState<{ x: number; y: number } | null>({

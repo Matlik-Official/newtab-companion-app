@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ImageTypes, NowPlaying } from '../types/electron';
 import { useOS } from '../hooks/useOS';
 import { Button } from './ui/button';
+import ImmersiveSongData from './immersive-song-data';
 
 type ImmersivePlayingProps = {
     setShowNewTab: React.Dispatch<React.SetStateAction<boolean>>;
@@ -29,6 +30,7 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
     const [isFirstLoad, setIsFirstLoad] = useState(true);
 
     const [authorColor, setAuthorColor] = useState<"white" | "black">("white");
+    const [songDataColor, setSongDataColor] = useState<"white" | "black">("white");
 
     // -------------------------------------------------------
     // Utility: Calculate luminance
@@ -40,7 +42,11 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
     // -------------------------------------------------------
     // Utility: Analyze image pixel behind author text
     // -------------------------------------------------------
-    function analyzeAuthorBackground(imageUrl: string): Promise<"white" | "black"> {
+    type SamplePoint = { x: number; y: number };
+
+    // Returns "white" or "black" depending on the brightness at a given point on the image.
+    // `x`/`y` are normalized (0–1), so (0, 0) is top-left, (1, 1) is bottom-right.
+    function analyzeBackgroundAtPoint(imageUrl: string, point: SamplePoint): Promise<"white" | "black"> {
         return new Promise((resolve) => {
             const img = new Image();
             img.crossOrigin = "anonymous";
@@ -56,9 +62,9 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
 
                 ctx.drawImage(img, 0, 0);
 
-                // Sample point behind author text position
-                const sampleX = 20;
-                const sampleY = 30;
+                // Sample point for the overlay
+                const sampleX = Math.round(Math.min(Math.max(point.x, 0), 1) * img.width);
+                const sampleY = Math.round(Math.min(Math.max(point.y, 0), 1) * img.height);
 
                 const { data } = ctx.getImageData(sampleX, sampleY, 1, 1);
                 const [r, g, b] = data;
@@ -69,6 +75,15 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
 
             img.onerror = () => resolve("white");
         });
+    }
+
+    function analyzeOverlayColors(imageUrl: string) {
+        // Author text is top-left-ish, song data sits bottom-right.
+        const authorPoint = { x: 0.05, y: 0.05 };
+        const songPoint = { x: 0.9, y: 0.9 };
+
+        analyzeBackgroundAtPoint(imageUrl, authorPoint).then(setAuthorColor);
+        analyzeBackgroundAtPoint(imageUrl, songPoint).then(setSongDataColor);
     }
 
     // -------------------------------------------------------
@@ -113,10 +128,7 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
                 setLastSwitchAt(Date.now());
                 setIsFirstLoad(false);
 
-                // Analyze author background color
-                analyzeAuthorBackground(nextImage.original_image).then(color => {
-                    setAuthorColor(color);
-                });
+                analyzeOverlayColors(nextImage.original_image);
 
             }, fadeDuration * 1000);
 
@@ -145,10 +157,7 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
                 setIsLoading(false);
                 setLastSwitchAt(Date.now());
 
-                // Analyze text background color
-                analyzeAuthorBackground(nextImage.original_image).then(color => {
-                    setAuthorColor(color);
-                });
+                analyzeOverlayColors(nextImage.original_image);
 
                 // 4. Wait BEFORE showing author text again
                 setTimeout(() => {
@@ -190,19 +199,19 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
             <div className="absolute top-1 left-1 right-1 flex items-center gap-1 justify-between drag z-20">
 
                 <div>
-                  {currentImage && (
-                      <motion.p
-                          className="text-sm font-bold pl-3"
-                          initial={{ opacity: 0 }}
-                          animate={{
-                              opacity: isAuthorVisible ? .5 : 0,
-                              color: authorColor === "white" ? "#ffffff" : "#000000"
-                          }}
-                          transition={{ duration: 0.6, ease: "easeInOut" }}
-                      >
-                          Image by: {currentImage.author}
-                      </motion.p>
-                  )}
+                    {currentImage && (
+                        <motion.p
+                            className="text-sm font-bold pl-3"
+                            initial={{ opacity: 0 }}
+                            animate={{
+                                opacity: isAuthorVisible ? .5 : 0,
+                                color: authorColor === "white" ? "#ffffff" : "#000000"
+                            }}
+                            transition={{ duration: 0.6, ease: "easeInOut" }}
+                        >
+                            Image by: {currentImage.author}
+                        </motion.p>
+                    )}
                 </div>
 
                 <Button
@@ -218,11 +227,9 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
                 </Button>
             </div>
 
-            <div className='absolute bottom-1 left-0 right-0 p-1 flex items-end justify-between z-10'>
+            <div className='absolute bottom-1 left-0 right-0 p-2 flex items-end justify-between z-10'>
                 <div></div>
-                <div className='p-2 rounded-md'>
-                    <img src={nowPlaying ? nowPlaying.artworkUrl : 'https://newtab.matlikofficial.com/logo.png'} alt={nowPlaying ? `${nowPlaying.title} by ${nowPlaying.artist}` : '-'} />
-                </div>
+                <ImmersiveSongData nowPlaying={nowPlaying} themeColor={songDataColor} />
             </div>
 
             {/* ------------------------------------------
