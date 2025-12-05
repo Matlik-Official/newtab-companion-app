@@ -84,6 +84,7 @@
     "dotenv": "^17.2.3",
     "electron-updater": "^6.6.2",
     "express": "^5.2.1",
+    "framer-motion": "^12.23.25",
     "keytar": "^7.9.0",
     "lucide-react": "^0.555.0",
     "ps-list": "^9.0.0",
