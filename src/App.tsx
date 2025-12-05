@@ -117,7 +117,7 @@ export default function App() {
 
   return showNewTab ? (
     <main className="min-h-screen w-full bg-slate-950 text-slate-50 flex flex-col">
-      <div className="w-[calc(95%)] h-fit p-1 drag absolute z-10 opacity-20 hover:opacity-80 transition-all">
+      <div className={`${os == "macOS" ? 'ml-16 w-[calc(90%)]' : 'w-[calc(95%)]'} h-fit p-1 drag absolute z-10 opacity-20 hover:opacity-80 transition-all`}>
         <Button
           variant="outline"
           size="icon"
