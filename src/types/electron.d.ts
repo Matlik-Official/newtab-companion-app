@@ -38,6 +38,7 @@ export interface ElectronAPI {
   }) => Promise<{ ok: boolean; message?: string }>;
   onNowPlaying: (cb: (data: NowPlaying) => void) => () => void;
   onSettingsUpdated: (cb: (data: Settings) => void) => () => void;
+  onWindowTrafficLights: (cb: (data: { visible: boolean; position: { x: number; y: number } | null }) => void) => () => void;
   onUpdateStatus: (cb: (data: unknown) => void) => () => void;
 }
 

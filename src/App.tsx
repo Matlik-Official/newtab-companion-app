@@ -37,6 +37,10 @@ export default function App() {
 
   const [showNewTab, setShowNewTab] = useState<boolean>(false);
   const [trafficLightsVisible, setTrafficLightsVisible] = useState<boolean>(true);
+  const [trafficLightPosition, setTrafficLightPosition] = useState<{ x: number; y: number } | null>({
+    x: 16,
+    y: 28
+  });
   const os = useOS();
 
 
@@ -86,12 +90,39 @@ export default function App() {
   }, [api]);
 
   useEffect(() => {
-    if (os !== "macOS") return;
-    api?.windowTrafficLights?.().then((state) => {
+    if (os !== "macOS" || !api) return;
+    api.windowTrafficLights?.().then((state) => {
       if (!state) return;
       setTrafficLightsVisible(!!state.visible);
+      if (state.position) setTrafficLightPosition(state.position);
     });
+    const off = api.onWindowTrafficLights?.((state) => {
+      if (!state) return;
+      setTrafficLightsVisible(!!state.visible);
+      if (state.position) setTrafficLightPosition(state.position);
+    });
+    return () => {
+      off?.();
+    };
   }, [api, os]);
+
+  useEffect(() => {
+    if (os !== "macOS" || !api) return;
+    // Hide macOS traffic lights while immersive screen is shown to mimic full-bleed view.
+    if (showNewTab) {
+      api.windowSetTrafficLights?.({ visible: false });
+      setTrafficLightsVisible(false);
+    } else {
+      const fallbackPosition = trafficLightPosition || { x: 16, y: 28 };
+      api.windowSetTrafficLights?.({ visible: true, position: fallbackPosition });
+      api.windowTrafficLights?.().then((state) => {
+        if (!state) return;
+        setTrafficLightsVisible(!!state.visible);
+        if (state.position) setTrafficLightPosition(state.position);
+        else setTrafficLightPosition(fallbackPosition);
+      });
+    }
+  }, [api, os, showNewTab, trafficLightPosition]);
 
   const progress = useMemo(() => {
     if (!nowPlaying) return 0;
@@ -129,8 +160,23 @@ export default function App() {
     <ImmersiveScreenSaver setShowNewTab={setShowNewTab} nowPlaying={nowPlaying} />
   ) : (
     <main className="min-h-screen bg-slate-950 text-slate-50">
-      <header className="flex select-none items-center justify-between bg-slate-950/80 p-4 backdrop-blur drag sticky top-0 z-10">
-        <div className={`flex items-center gap-3 text-sm text-slate-300 ${os == "macOS" && trafficLightsVisible ? 'ml-[72px]' : ''}`}>
+      <header className="relative flex select-none items-center justify-between bg-slate-950/80 p-4 backdrop-blur drag sticky top-0 z-10">
+        {os === "macOS" && trafficLightsVisible && (
+          <div
+            className="absolute left-0 top-0 h-full no-drag"
+            style={{ width: `${(trafficLightPosition?.x ?? 16) + 64}px` }}
+            aria-hidden
+          />
+        )}
+        <div
+          className="flex items-center gap-3 text-sm text-slate-300"
+          style={{
+            marginLeft:
+              os === "macOS" && trafficLightsVisible
+                ? (trafficLightPosition?.x ?? 16) + 64
+                : undefined,
+          }}
+        >
           <img src="https://newtab.matlikofficial.com/logo.png" alt="NewTab Logo" className="h-9 w-9 rounded-sm" />
           <div className="text-left leading-tight">
             <p className="text-sm font-semibold">New Tab | Companion app</p>

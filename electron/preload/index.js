@@ -26,5 +26,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   windowSetTrafficLights: (payload) => ipcRenderer.invoke("window:set-traffic-lights", payload),
   onNowPlaying: createListener("now-playing"),
   onSettingsUpdated: createListener("settings-updated"),
+  onWindowTrafficLights: createListener("window-traffic-lights"),
   onUpdateStatus: createListener("update-status")
 });

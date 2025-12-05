@@ -81,6 +81,28 @@ function broadcast(channel, payload) {
   });
 }
 
+function getTrafficLightState(win = BrowserWindow.getFocusedWindow() || mainWindow) {
+  const positionRaw =
+    typeof win?.getTrafficLightPosition === "function"
+      ? win.getTrafficLightPosition()
+      : null;
+  const position = positionRaw || { x: 16, y: 28 };
+  const visible =
+    process.platform === "darwin"
+      ? (typeof win?.isFullScreen === "function" ? !win.isFullScreen() : true)
+      : false;
+  return { visible, position };
+}
+
+function emitTrafficLightState(win = BrowserWindow.getFocusedWindow() || mainWindow) {
+  if (!win) return;
+  try {
+    win.webContents.send("window-traffic-lights", getTrafficLightState(win));
+  } catch (err) {
+    console.warn("[traffic-lights] failed to emit", err);
+  }
+}
+
 function setupAutoUpdater() {
   if (!app.isPackaged) return;
   autoUpdater.autoDownload = true;
@@ -190,8 +212,12 @@ function createWindow() {
     minHeight: 720,
     backgroundColor: "#0b1021",
     icon: path.join(__dirname, "..", "assets", "logo.png"),
-    frame: false,
-    titleBarStyle: "hidden",
+    titleBarStyle: "hiddenInset",
+    titleBarOverlay: {
+      color: "#0b1021",
+      symbolColor: "#ffffff",
+      height: 52,
+    },
     trafficLightPosition: { x: 16, y: 28 },
     webPreferences: {
       preload: path.join(__dirname, "..", "preload", "index.js"),
@@ -219,6 +245,13 @@ function createWindow() {
     const indexPath = path.join(__dirname, "..", "..", "renderer", "index.html");
     mainWindow.loadFile(indexPath);
   }
+
+  mainWindow.once("ready-to-show", () => emitTrafficLightState(mainWindow));
+  mainWindow.on("enter-full-screen", () => emitTrafficLightState(mainWindow));
+  mainWindow.on("leave-full-screen", () => emitTrafficLightState(mainWindow));
+  mainWindow.on("show", () => emitTrafficLightState(mainWindow));
+  mainWindow.on("blur", () => emitTrafficLightState(mainWindow));
+  mainWindow.on("focus", () => emitTrafficLightState(mainWindow));
 }
 
 async function bootstrap() {
@@ -342,18 +375,7 @@ async function bootstrap() {
     const win = BrowserWindow.getFocusedWindow();
     if (win) win.close();
   });
-  ipcMain.handle("window:traffic-lights", () => {
-    const win = BrowserWindow.getFocusedWindow() || mainWindow;
-    const position =
-      typeof win?.getTrafficLightPosition === "function"
-        ? win.getTrafficLightPosition()
-        : null;
-    const visible =
-      process.platform === "darwin"
-        ? (typeof win?.isFullScreen === "function" ? !win.isFullScreen() : true)
-        : false;
-    return { visible, position };
-  });
+  ipcMain.handle("window:traffic-lights", () => getTrafficLightState());
   ipcMain.handle("window:set-traffic-lights", (_evt, payload = {}) => {
     const win = BrowserWindow.getFocusedWindow() || mainWindow;
     if (process.platform !== "darwin") {
@@ -379,6 +401,7 @@ async function bootstrap() {
       }
     }
 
+    emitTrafficLightState(win);
     return { ok: true };
   });
 }
