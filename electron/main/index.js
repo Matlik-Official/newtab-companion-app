@@ -26,6 +26,7 @@ process.env.SPOTIFY_REDIRECT_PORT = String(ENV.SPOTIFY_REDIRECT_PORT);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = !!process.env.VITE_DEV_SERVER_URL;
+const isMac = process.platform === "darwin";
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const REDIRECT_URL = process.env.SPOTIFY_REDIRECT_URL;
@@ -212,13 +213,18 @@ function createWindow() {
     minHeight: 720,
     backgroundColor: "#0b1021",
     icon: path.join(__dirname, "..", "assets", "logo.png"),
-    titleBarStyle: "hiddenInset",
-    titleBarOverlay: {
-      color: "#0b1021",
-      symbolColor: "#ffffff",
-      height: 52,
-    },
-    trafficLightPosition: { x: 16, y: 28 },
+    frame: isMac, // hide native title bar buttons on Windows/Linux; keep default frame on macOS
+    titleBarStyle: isMac ? "hiddenInset" : "hidden",
+    ...(isMac
+      ? {
+          titleBarOverlay: {
+            color: "#0b1021",
+            symbolColor: "#ffffff",
+            height: 52,
+          },
+          trafficLightPosition: { x: 16, y: 28 },
+        }
+      : {}),
     webPreferences: {
       preload: path.join(__dirname, "..", "preload", "index.js"),
       contextIsolation: true,

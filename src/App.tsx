@@ -160,7 +160,7 @@ export default function App() {
     <ImmersiveScreenSaver setShowNewTab={setShowNewTab} nowPlaying={nowPlaying} />
   ) : (
     <main className="min-h-screen bg-slate-950 text-slate-50">
-      <header className="relative flex select-none items-center justify-between bg-slate-950/80 p-4 backdrop-blur drag sticky top-0 z-10">
+      <header className="relative flex select-none items-center justify-between bg-slate-950/80 p-4 backdrop-blur drag top-0 z-10">
         {os === "macOS" && trafficLightsVisible && (
           <div
             className="absolute left-0 top-0 h-full no-drag"
