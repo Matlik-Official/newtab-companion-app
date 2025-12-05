@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import type { NowPlaying, Settings } from "./types/electron";
 import { Button } from "./components/ui/button";
+import { useOS } from "./hooks/useOS";
 
 const fallbackArtwork =
   "https://dummyimage.com/320x320/0f172a/94a3b8.png&text=No+Artwork";
@@ -34,6 +35,8 @@ export default function App() {
   const [appVersion, setAppVersion] = useState<string | null>(null);
 
   const [showNewTab, setShowNewTab] = useState<boolean>(false);
+  const os = useOS();
+  
 
   useEffect(() => {
     if (!api) {
@@ -132,7 +135,7 @@ export default function App() {
   ) : (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <header className="flex select-none items-center justify-between bg-slate-950/80 p-4 backdrop-blur drag sticky top-0 z-10">
-        <div className="flex items-center gap-3 text-sm text-slate-300">
+        <div className={`flex items-center gap-3 text-sm text-slate-300 ${os == "macOS" && 'ml-14'}`}>
           <img src="https://newtab.matlikofficial.com/logo.png" alt="NewTab Logo" className="h-9 w-9 rounded-sm" />
           <div className="text-left leading-tight">
             <p className="text-sm font-semibold">New Tab | Companion app</p>
@@ -160,7 +163,7 @@ export default function App() {
             <Settings2 className="h-4 w-4" />
             Settings
           </Button>
-          <div className="flex items-center gap-1 no-drag">
+          <div className={`${os == "macOS" ? 'hidden' : 'flex'} items-center gap-1 no-drag`}>
             <Button
               size="sm"
               variant="outline"
