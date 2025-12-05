@@ -48,7 +48,7 @@ export async function startSpotifyAuth() {
 
   const clientId = ENV.SPOTIFY_CLIENT_ID;
   if (!clientId) {
-    throw new Error("Missing SPOTIFY_CLIENT_ID env variable");
+    throw new Error("Missing SPOTIFY_CLIENT_ID env variable. Set it in .env (or .env.local) and restart the app.");
   }
 
   const parsedPort = ENV.SPOTIFY_REDIRECT_PORT;
