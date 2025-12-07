@@ -150,6 +150,43 @@ export default function App() {
     );
   }, [nowPlaying]);
 
+  const sourceLabel = useMemo(() => {
+    switch (nowPlaying?.source) {
+      case "spotify":
+        return "Spotify";
+      case "cider":
+        return "Cider";
+      case "system":
+        return "System media";
+      default:
+        return "none";
+    }
+  }, [nowPlaying?.source]);
+
+  const serviceList = useMemo(
+    () => [
+      {
+        id: "spotify" as const,
+        label: "Spotify",
+        icon: Music,
+        enabled: settings?.preferSpotify ?? true
+      },
+      {
+        id: "cider" as const,
+        label: "Cider",
+        icon: Music,
+        enabled: settings?.preferCider ?? false
+      },
+      {
+        id: "system" as const,
+        label: "System media session",
+        icon: Power,
+        enabled: settings?.useSystemMediaSession ?? false
+      }
+    ],
+    [settings?.preferCider, settings?.preferSpotify, settings?.useSystemMediaSession]
+  );
+
   const toggleSetting = async (key: keyof Settings) => {
     if (!settings) return;
     const updated = await api?.updateSettings?.({ [key]: !settings[key] });
@@ -262,7 +299,7 @@ export default function App() {
               <div className="flex flex-1 flex-col gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.12em] text-slate-400">
-                    {nowPlaying?.source || "none"}
+                    {sourceLabel}
                   </p>
                   <h1 className="text-3xl font-semibold leading-tight">
                     {nowPlaying?.title || "Nothing playing"}
@@ -324,15 +361,13 @@ export default function App() {
               </div>
               <span className="inline-flex items-center gap-2 rounded bg-emerald-500/15 p-2 px-3 text-xs font-semibold text-emerald-300 uppercase">
                 <Wifi className="h-3 w-3" />
-                {nowPlaying?.source || "none"}
+                {sourceLabel}
               </span>
             </div>
             <div className="mt-4 space-y-3">
-              {["spotify", "cider"].map((svc) => {
-                const active = nowPlaying?.source === svc;
-                const enabled =
-                  svc === "spotify" ? settings?.preferSpotify : settings?.preferCider;
-                const lastTrack = serviceTracks[svc];
+              {serviceList.map(({ id, label, icon: Icon, enabled }) => {
+                const active = nowPlaying?.source === id;
+                const lastTrack = serviceTracks[id];
                 const statusLabel = active
                   ? "Active"
                   : enabled
@@ -345,13 +380,13 @@ export default function App() {
                     : "bg-slate-800 text-slate-500";
                 return (
                   <div
-                    key={svc}
+                    key={id}
                     className="rounded border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-200"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-slate-400">
-                        <Music className="h-3.5 w-3.5" />
-                        {svc === "spotify" ? "Spotify" : "Cider"}
+                        <Icon className="h-3.5 w-3.5" />
+                        {label}
                       </div>
                       <span className={`rounded-full px-3 py-1 text-xs ${statusClass}`}>
                         {statusLabel}
@@ -447,6 +482,21 @@ export default function App() {
                   onClick={() => toggleSetting("preferCider")}
                 >
                   {settings.preferCider ? "On" : "Off"}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col">
+                  <p>Use system media session</p>
+                  <span className="text-xs opacity-50">
+                    Pulls now playing from the OS media session API (Windows only)
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => toggleSetting("useSystemMediaSession")}
+                >
+                  {settings.useSystemMediaSession ? "On" : "Off"}
                 </Button>
               </div>
               <div className="flex items-center justify-between gap-3">

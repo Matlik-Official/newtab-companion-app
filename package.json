@@ -1,6 +1,6 @@
 {
   "name": "newtab-companion-app",
-  "version": "1.0.0",
+  "version": "1.0.45",
   "description": "Companion app for Newtab by MatlikOfficial",
   "main": "electron/main/index.js",
   "type": "module",
@@ -55,14 +55,13 @@
     },
     "linux": {
       "target": [
-        "tar.gz"
-      ],
+        "AppImage"
+      ],    
       "icon": "electron/assets/logo.png"
     },
     "mac": {
       "target": [
-        "dmg",
-        "zip"
+        "dmg"
       ],
       "icon": "electron/assets/logo.png"
     },
@@ -81,6 +80,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cuid": "^3.0.0",
+    "dbus-next": "^1.1.4",
     "dotenv": "^17.2.3",
     "electron-updater": "^6.6.2",
     "express": "^5.2.1",

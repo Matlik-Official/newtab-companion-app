@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { createApiServer } from "../../api/server.js";
 import { createCiderService } from "../../services/cider.js";
 import { createSpotifyService } from "../../services/spotify.js";
+import { createSystemMediaSessionService } from "../../services/systemMediaSession.js";
 import { startSpotifyAuth } from "../../services/spotifyAuth.js";
 import { clearTokens, hasTokens } from "../../services/spotifyTokens.js";
 import { createPlaybackEngine } from "../../state/engine.js";
@@ -41,7 +42,8 @@ let trafficLightsState = {
 const nowPlayingStore = createNowPlayingStore(eventBus);
 const spotify = createSpotifyService();
 const cider = createCiderService();
-const services = [spotify, cider];
+const systemMediaSession = createSystemMediaSessionService();
+const services = [systemMediaSession, spotify, cider];
 let settingsStore;
 let apiServer;
 let currentPort;
@@ -207,11 +209,17 @@ async function refreshTrayMenu() {
       ? "Active"
       : "Enabled"
     : "Disabled";
+  const systemStatus = settings?.useSystemMediaSession
+    ? np?.source === "system"
+      ? "Active"
+      : "Enabled"
+    : "Disabled";
 
   const contextMenu = Menu.buildFromTemplate([
     { label: `Now: ${nowPlayingLabel}`, enabled: false },
     { label: `Spotify: ${spotifyStatus}`, enabled: false },
     { label: `Cider: ${ciderStatus}`, enabled: false },
+    { label: `System: ${systemStatus}`, enabled: false },
     { type: "separator" },
     {
       label: "Show",

@@ -16,11 +16,52 @@ export function createPlaybackEngine({
   let timer = null;
   let lastServiceId = null;
 
+  function buildServiceOrder(settings) {
+    const wantsSystem = !!settings.useSystemMediaSession;
+    const wantsSpotify = !!settings.preferSpotify;
+    const wantsCider = !!settings.preferCider;
+
+    const ids = [];
+    if (wantsSystem) ids.push("system");
+
+    if (wantsSpotify || wantsCider) {
+      const preferCiderFirst = wantsCider && !wantsSpotify;
+      if (preferCiderFirst) {
+        if (wantsCider) ids.push("cider");
+        if (wantsSpotify) ids.push("spotify");
+      } else {
+        if (wantsSpotify) ids.push("spotify");
+        if (wantsCider) ids.push("cider");
+      }
+    }
+
+    const seen = new Set();
+    const ordered = [];
+
+    for (const id of ids) {
+      if (seen.has(id)) continue;
+      const svc = services.find((s) => s.id === id);
+      if (svc) {
+        ordered.push(svc);
+        seen.add(id);
+      }
+    }
+
+    for (const svc of services) {
+      if (seen.has(svc.id)) continue;
+      if (svc.id === "system" && !wantsSystem) continue;
+      if (svc.id === "spotify" && !wantsSpotify) continue;
+      if (svc.id === "cider" && !wantsCider) continue;
+      ordered.push(svc);
+      seen.add(svc.id);
+    }
+
+    return ordered;
+  }
+
   async function tick() {
     const settings = await getSettings();
-    const order = settings.preferSpotify
-      ? [services.find((s) => s.id === "spotify"), services.find((s) => s.id === "cider")]
-      : [services.find((s) => s.id === "cider"), services.find((s) => s.id === "spotify")];
+    const order = buildServiceOrder(settings);
 
     let updated = false;
 

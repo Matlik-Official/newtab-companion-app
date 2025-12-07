@@ -6,12 +6,13 @@ export interface NowPlaying {
   progressMs: number;
   durationMs: number;
   isPlaying: boolean;
-  source: "spotify" | "cider" | "none";
+  source: "spotify" | "cider" | "system" | "none";
 }
 
 export interface Settings {
   preferSpotify: boolean;
   preferCider: boolean;
+  useSystemMediaSession: boolean;
   autostart: boolean;
   apiPort: number;
 }

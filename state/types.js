@@ -7,13 +7,14 @@
  * @property {number} progressMs
  * @property {number} durationMs
  * @property {boolean} isPlaying
- * @property {"spotify"|"cider"|"none"} source
+ * @property {"spotify"|"cider"|"system"|"none"} source
  */
 
 /**
  * @typedef {Object} Settings
  * @property {boolean} preferSpotify
  * @property {boolean} preferCider
+ * @property {boolean} useSystemMediaSession
  * @property {boolean} autostart
  * @property {number} apiPort
  */
@@ -34,6 +35,7 @@ export const defaultNowPlaying = {
 export const defaultSettings = {
   preferSpotify: true,
   preferCider: false,
+  useSystemMediaSession: false,
   autostart: false,
   apiPort: 8787
 };
