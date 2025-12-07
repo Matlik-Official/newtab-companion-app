@@ -1,6 +1,7 @@
-import React from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { NowPlaying } from '../types/electron';
+import { MarqueeText } from './marquee-text';
 
 type ImmersiveSongDataProps = {
     nowPlaying: NowPlaying | null;
@@ -9,30 +10,76 @@ type ImmersiveSongDataProps = {
 };
 
 export default function ImmersiveSongData({ nowPlaying, themeColor, animationDuration = 1 }: ImmersiveSongDataProps) {
-    const artwork = nowPlaying?.artworkUrl || 'https://newtab.matlikofficial.com/logo.png';
-    const alt = nowPlaying ? `${nowPlaying.title} by ${nowPlaying.artist}` : 'Now playing artwork';
-    const contentKey = nowPlaying
-        ? `${nowPlaying.title}-${nowPlaying.artist}-${nowPlaying.album}-${nowPlaying.artworkUrl}`
+    const [displayTrack, setDisplayTrack] = useState<NowPlaying | null>(nowPlaying);
+    const prefersReducedMotion = useReducedMotion();
+    const titleRef = useRef<HTMLParagraphElement | null>(null);
+    const titleContainerRef = useRef<HTMLDivElement | null>(null);
+    const [titleScrollDistance, setTitleScrollDistance] = useState(0);
+
+    // Keep the last known track to avoid flicker when data briefly disappears.
+    useEffect(() => {
+        if (nowPlaying) {
+            setDisplayTrack(nowPlaying);
+        }
+    }, [nowPlaying]);
+
+    const artwork = displayTrack?.artworkUrl || 'https://newtab.matlikofficial.com/logo.png';
+    const alt = displayTrack ? `${displayTrack.title} by ${displayTrack.artist}` : 'Now playing artwork';
+    const contentKey = displayTrack
+        ? `${displayTrack.title}-${displayTrack.artist}-${displayTrack.album}-${displayTrack.artworkUrl}`
         : 'no-track';
-    const transition = { duration: animationDuration, ease: 'easeInOut' };
+
+    const transition = { duration: animationDuration, ease: [0.25, 0.1, 0.25, 1] as const };
+    const textStagger = prefersReducedMotion ? 0 : 0.08;
+
+    const baseInitial = prefersReducedMotion
+        ? { opacity: 0 }
+        : { opacity: 0, x: 40, scale: 0.98, filter: 'blur(6px)' };
+    const baseAnimate = prefersReducedMotion
+        ? { opacity: 1 }
+        : { opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' };
+    const baseExit = prefersReducedMotion
+        ? { opacity: 0 }
+        : { opacity: 0, x: -40, scale: 0.98, filter: 'blur(6px)' };
+
+    const marqueeDuration = Math.max(6, titleScrollDistance / 25);
 
     return (
-        <div className={`flex gap-4 h-fit w-fit rounded-full relative`}>
-            <AnimatePresence mode="wait">
+        <div className="flex gap-4 h-fit w-fit rounded-full relative items-center">
+            <AnimatePresence mode="popLayout">
                 <motion.div
                     key={contentKey}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    initial={baseInitial}
+                    animate={baseAnimate}
+                    exit={baseExit}
                     transition={transition}
-                    className="relative flex gap-4 h-fit w-fit rounded-full"
+                    className="relative flex items-center gap-4 h-24 w-fit rounded-full"
                 >
-                    <img src={artwork} alt={alt} className='absolute left-1 max-h-[84px] rounded-full aspect-square' />
-                    <div className={`inset-0 p-1 flex gap-4 h-fit w-fit rounded-full bg-black/50 border border-white/25 transition-all duration-300 backdrop-blur`}>
-                        <img src={artwork} alt={alt} className='max-h-20 rounded-full aspect-square' />
-                        <div className='min-w-32 w-fit rounded-l-md rounded-r-full p-2 pr-4 pl-0 flex flex-col justify-center'>
-                            <p className='font-bold text-lg'>{nowPlaying?.title}</p>
-                            <p className='text-sm font-semibold opacity-50'>{nowPlaying?.artist}</p>
+                    <div className="relative pl-4 pr-5 py-2 flex items-center gap-3 h-full w-fit rounded-full bg-black/50 border border-white/25 transition-all duration-300 backdrop-blur">
+                        <div className="relative h-16 w-16 shrink-0">
+                            <img
+                                src={artwork}
+                                alt={alt}
+                                className="absolute inset-0 h-full w-full rounded-full object-cover blur-sm scale-110 opacity-80"
+                            />
+                            <img
+                                src={artwork}
+                                alt={alt}
+                                className="absolute inset-0 h-full w-full rounded-full object-cover shadow-lg"
+                            />
+                        </div>
+                        <div className="min-w-[220px] max-w-[320px] w-full rounded-l-md rounded-r-full flex flex-col justify-center gap-0.5">
+                            <div
+                                ref={titleContainerRef}
+                                className="relative overflow-hidden"
+                            >
+                                <MarqueeText text={displayTrack?.title ? displayTrack?.title : '-'} />
+                            </div>
+                            <p
+                                className="text-sm font-semibold opacity-70"
+                            >
+                                {displayTrack?.artist ? displayTrack?.artist : '-'}
+                            </p>
                         </div>
                     </div>
                 </motion.div>

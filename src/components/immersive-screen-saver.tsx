@@ -18,7 +18,7 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
     const refreshIntervalMs = 10_000;
     const fadeDuration = 0.7;          // image fade duration
     const scaleZoom = 1.02;            // image starts/ends slightly larger
-    const authorOffsetMs = 1000;       // early fade out & late fade in timing
+    const authorOffsetMs = 1_000;       // early fade out & late fade in timing
 
     const [currentImage, setCurrentImage] = useState<ImageTypes>();
     const [nextImage, setNextImage] = useState<ImageTypes>();
