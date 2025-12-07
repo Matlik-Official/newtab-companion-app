@@ -1,7 +1,7 @@
 {
   "name": "newtab-companion-app",
   "version": "1.0.0",
-  "description": "Companion app for Newtab by MatlikOfficial",
+  "description": "Companion app for New Tab by MatlikOfficial",
   "main": "electron/main/index.js",
   "type": "module",
   "scripts": {
@@ -47,15 +47,32 @@
       }
     ],
     "npmRebuild": true,
-    "win": {
-      "target": [
-        "nsis"
-      ],
-      "icon": "electron/assets/logo.png"
-    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Matlik-Official",
+        "repo": "newtab-companion-app"
+      }
+    ],
     "linux": {
       "target": [
         "deb"
+      ],
+      "icon": "electron/assets/logo.png",
+      "category": "Utility",
+      "maintainer": "MatlikOfficial <newtab@matlikofficial.com>",
+      "description": "Companion app for New Tab by MatlikOfficial",
+      "compression": "xz",
+      "depends": [
+        "libnotify4",
+        "libappindicator3-1",
+        "libgtk-3-0"
+      ],
+      "buildDependenciesFromSource": true
+    },
+    "win": {
+      "target": [
+        "nsis"
       ],
       "icon": "electron/assets/logo.png"
     },
@@ -65,14 +82,7 @@
         "zip"
       ],
       "icon": "electron/assets/logo.png"
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "Matlik-Official",
-        "repo": "newtab-companion-app"
-      }
-    ]
+    }
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
