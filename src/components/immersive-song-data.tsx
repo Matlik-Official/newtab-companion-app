@@ -13,7 +13,7 @@ export default function ImmersiveSongData({ nowPlaying, themeColor }: ImmersiveS
     return (
         <div className={` flex gap-4 h-fit w-fit rounded-full relative`}>
             <img src={artwork} alt={alt} className='absolute left-1 max-h-[84px] rounded-full aspect-square' />
-            <div className={`inset-0 p-1 flex gap-4 h-fit w-fit rounded-full ${themeColor ? themeColor == "white" ? 'bg-white/20 text-black' : 'bg-black/20 text-white' : 'bg-black/20 text-white'} transition-all duration-300 backdrop-blur`}>
+            <div className={`inset-0 p-1 flex gap-4 h-fit w-fit rounded-full bg-black/50 border border-white/25 transition-all duration-300 backdrop-blur`}>
                 <img src={artwork} alt={alt} className='max-h-20 rounded-full aspect-square' />
                 <div className='min-w-32 w-fit rounded-l-md rounded-r-full p-2 pr-4 pl-0 flex flex-col justify-center'>
                     <p className='font-bold text-lg'>{nowPlaying?.title}</p>

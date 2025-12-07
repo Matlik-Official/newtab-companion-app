@@ -55,7 +55,7 @@
     },
     "linux": {
       "target": [
-        "tar.gz"
+        "AppImage"
       ],
       "icon": "electron/assets/logo.png"
     },
