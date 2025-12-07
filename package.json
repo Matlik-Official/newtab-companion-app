@@ -80,7 +80,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cuid": "^3.0.0",
-    "dbus-next": "^1.1.4",
+    "dbus-next": "^0.10.2",
     "dotenv": "^17.2.3",
     "electron-updater": "^6.6.2",
     "express": "^5.2.1",
