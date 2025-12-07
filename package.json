@@ -61,16 +61,16 @@
       "description": "Companion app for New Tab by MatlikOfficial",
       "compression": "normal",
       "target": [
-        {
-          "target": "deb",
-          "depends": [
-            "libnotify4",
-            "libappindicator3-1",
-            "libgtk-3-0"
-          ],
-          "buildDependenciesFromSource": true
-        }
+        "deb"
       ]
+    },
+    "deb": {
+      "depends": [
+        "libnotify4",
+        "libappindicator3-1",
+        "libgtk-3-0"
+      ],
+      "buildDependenciesFromSource": true
     },
     "win": {
       "target": [
