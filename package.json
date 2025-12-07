@@ -62,7 +62,7 @@
       "category": "Utility",
       "maintainer": "MatlikOfficial <newtab@matlikofficial.com>",
       "description": "Companion app for New Tab by MatlikOfficial",
-      "compression": "xz",
+      "compression": "normal",
       "depends": [
         "libnotify4",
         "libappindicator3-1",
