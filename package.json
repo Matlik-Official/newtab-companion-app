@@ -55,7 +55,7 @@
     },
     "linux": {
       "target": [
-        "AppImage"
+        "deb"
       ],
       "icon": "electron/assets/logo.png"
     },
