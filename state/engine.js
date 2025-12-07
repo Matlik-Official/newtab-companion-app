@@ -11,7 +11,7 @@ export function createPlaybackEngine({
   services,
   nowPlayingStore,
   getSettings,
-  intervalMs = 750
+  intervalMs = 5000
 }) {
   let timer = null;
   let lastServiceId = null;
