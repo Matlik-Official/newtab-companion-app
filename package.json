@@ -59,7 +59,7 @@
       "category": "Utility",
       "maintainer": "MatlikOfficial <newtab@matlikofficial.com>",
       "description": "Companion app for New Tab by MatlikOfficial",
-      "compression": "normal",
+      "compression": "xz",
       "target": [
         "deb"
       ]
