@@ -1,6 +1,6 @@
 {
   "name": "newtab-companion-app",
-  "version": "1.0.45",
+  "version": "1.0.0",
   "description": "Companion app for Newtab by MatlikOfficial",
   "main": "electron/main/index.js",
   "type": "module",
