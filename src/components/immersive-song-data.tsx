@@ -55,7 +55,7 @@ export default function ImmersiveSongData({ nowPlaying, themeColor, animationDur
                     transition={transition}
                     className="relative flex items-center gap-4 h-24 w-fit rounded-full"
                 >
-                    <div className="relative pl-4 pr-5 py-2 flex items-center gap-3 h-full w-fit rounded-full bg-black/50 border border-white/25 transition-all duration-300 backdrop-blur">
+                    <div className="relative pl-4 pr-5 py-2 flex items-center gap-4 h-full w-fit rounded-full bg-black/50 border border-white/25 transition-all duration-300 backdrop-blur">
                         <div className="relative h-16 w-16 shrink-0">
                             <img
                                 src={artwork}

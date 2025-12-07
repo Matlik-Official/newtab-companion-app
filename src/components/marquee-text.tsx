@@ -16,6 +16,8 @@ export function MarqueeText({ text, className = "", speed = 30, pauseDuration = 
   const [containerWidth, setContainerWidth] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
   const [currentX, setCurrentX] = useState(0)
+  const [leftFadeOpacity, setLeftFadeOpacity] = useState(0)
+  const [rightFadeOpacity, setRightFadeOpacity] = useState(0)
   const controls = useAnimationControls()
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export function MarqueeText({ text, className = "", speed = 30, pauseDuration = 
 
   useEffect(() => {
     if (!shouldAnimate || isHovered) return
+    let cancelled = false
 
     const overflow = textWidth - containerWidth
     const duration = overflow / speed
@@ -42,7 +45,7 @@ export function MarqueeText({ text, className = "", speed = 30, pauseDuration = 
     const animate = async () => {
       await new Promise((resolve) => setTimeout(resolve, pauseDuration * 1000))
 
-      while (true) {
+      while (!cancelled) {
         const startTime = Date.now()
         controls.start({
           x: -overflow,
@@ -50,6 +53,7 @@ export function MarqueeText({ text, className = "", speed = 30, pauseDuration = 
         })
 
         const trackPosition = () => {
+          if (cancelled) return
           const elapsed = (Date.now() - startTime) / 1000
           const progress = Math.min(elapsed / duration, 1)
           setCurrentX(-overflow * progress)
@@ -60,9 +64,11 @@ export function MarqueeText({ text, className = "", speed = 30, pauseDuration = 
         trackPosition()
 
         await new Promise((resolve) => setTimeout(resolve, duration * 1000))
+        if (cancelled) break
         setCurrentX(-overflow)
 
         await new Promise((resolve) => setTimeout(resolve, pauseDuration * 1000))
+        if (cancelled) break
 
         const returnStartTime = Date.now()
         controls.start({
@@ -71,6 +77,7 @@ export function MarqueeText({ text, className = "", speed = 30, pauseDuration = 
         })
 
         const trackReturnPosition = () => {
+          if (cancelled) return
           const elapsed = (Date.now() - returnStartTime) / 1000
           const progress = Math.min(elapsed / duration, 1)
           setCurrentX(-overflow * (1 - progress))
@@ -81,6 +88,7 @@ export function MarqueeText({ text, className = "", speed = 30, pauseDuration = 
         trackReturnPosition()
 
         await new Promise((resolve) => setTimeout(resolve, duration * 1000))
+        if (cancelled) break
         setCurrentX(0)
 
         await new Promise((resolve) => setTimeout(resolve, pauseDuration * 1000))
@@ -90,9 +98,18 @@ export function MarqueeText({ text, className = "", speed = 30, pauseDuration = 
     animate()
 
     return () => {
+      cancelled = true
       controls.stop()
     }
   }, [shouldAnimate, textWidth, containerWidth, speed, pauseDuration, controls, isHovered])
+
+  // Reset animation position whenever the text changes
+  useEffect(() => {
+    controls.stop()
+    controls.set({ x: 0 })
+    setCurrentX(0)
+    setIsHovered(false)
+  }, [text, controls])
 
   useEffect(() => {
     if (isHovered) {
@@ -104,34 +121,34 @@ export function MarqueeText({ text, className = "", speed = 30, pauseDuration = 
   const showLeftFade = shouldAnimate && currentX < -2
   const showRightFade = shouldAnimate && currentX > -overflow + 2
 
+  // Update fade opacities with smooth transitions
+  useEffect(() => {
+    setLeftFadeOpacity(showLeftFade ? 1 : 0)
+    setRightFadeOpacity(showRightFade ? 1 : 0)
+  }, [showLeftFade, showRightFade])
+
   const getMaskStyle = (): React.CSSProperties => {
     if (!shouldAnimate) return {}
 
     const fadeWidth = 20
+    
+    // Create smooth fade colors based on opacity
+    const leftStart = `rgba(0,0,0,${1 - leftFadeOpacity})`
+    const leftEnd = "black"
+    const rightStart = "black"
+    const rightEnd = `rgba(0,0,0,${1 - rightFadeOpacity})`
 
-    if (showLeftFade && showRightFade) {
-      return {
-        maskImage: `linear-gradient(to right, transparent, black ${fadeWidth}px, black calc(100% - ${fadeWidth}px), transparent)`,
-        WebkitMaskImage: `linear-gradient(to right, transparent, black ${fadeWidth}px, black calc(100% - ${fadeWidth}px), transparent)`,
-      }
-    } else if (showLeftFade) {
-      return {
-        maskImage: `linear-gradient(to right, transparent, black ${fadeWidth}px)`,
-        WebkitMaskImage: `linear-gradient(to right, transparent, black ${fadeWidth}px)`,
-      }
-    } else if (showRightFade) {
-      return {
-        maskImage: `linear-gradient(to left, transparent, black ${fadeWidth}px)`,
-        WebkitMaskImage: `linear-gradient(to left, transparent, black ${fadeWidth}px)`,
-      }
+    return {
+      maskImage: `linear-gradient(to right, ${leftStart}, ${leftEnd} ${fadeWidth}px, ${rightStart} calc(100% - ${fadeWidth}px), ${rightEnd})`,
+      WebkitMaskImage: `linear-gradient(to right, ${leftStart}, ${leftEnd} ${fadeWidth}px, ${rightStart} calc(100% - ${fadeWidth}px), ${rightEnd})`,
+      transition: "mask-image 0.3s ease, -webkit-mask-image 0.3s ease",
     }
-    return {}
   }
 
   return (
     <div
       ref={containerRef}
-      className={`relative overflow-hidden whitespace-nowrap ${className}`}
+      className={`relative overflow-hidden whitespace-nowrap transition-all duration-300 ease-out ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={getMaskStyle()}
