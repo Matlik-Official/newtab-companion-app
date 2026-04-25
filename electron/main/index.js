@@ -241,6 +241,7 @@ async function refreshTrayMenu() {
   tray.setToolTip(`Now Playing Companion — ${nowPlayingLabel}`);
   tray.setContextMenu(contextMenu);
 }
+
 async function refreshNowPlayingOnce() {
   try {
     const spotifyService = services.find((s) => s.id === "spotify");
@@ -337,7 +338,7 @@ async function bootstrap() {
   await startApi(settings.apiPort);
 
   const trayIcon = path.join(__dirname, "..", "assets", "logo.png");
-  const newTrayIcon = nativeImage.createFromPath(trayIcon).resize({ width: 16, height: 16 })
+  const newTrayIcon = nativeImage.createFromPath(trayIcon).resize({ width: 16, height: 16 });
   tray = new Tray(newTrayIcon);
   await refreshTrayMenu();
   tray.on("click", () => {
@@ -440,26 +441,46 @@ async function bootstrap() {
   }));
 }
 
-app.whenReady().then(async () => {
-  await bootstrap();
-  createWindow();
+// ── Single-instance lock ───────────────────────────────────────────────────
+// Prevents a second process from launching (and crashing on EADDRINUSE)
+// when the user clicks the shortcut while the app is already running hidden.
+const gotTheLock = app.requestSingleInstanceLock();
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+if (!gotTheLock) {
+  // Another instance is already running — exit immediately.
+  app.quit();
+} else {
+  // Fired when a second instance tries to launch (e.g. clicking the shortcut).
+  // Instead of starting fresh, just restore and focus the existing window.
+  app.on("second-instance", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
     }
   });
-});
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
+  app.whenReady().then(async () => {
+    await bootstrap();
+    createWindow();
 
-app.on("before-quit", () => {
-  if (updateInterval) {
-    clearInterval(updateInterval);
-    updateInterval = null;
-  }
-});
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  });
+
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
+
+  app.on("before-quit", () => {
+    if (updateInterval) {
+      clearInterval(updateInterval);
+      updateInterval = null;
+    }
+  });
+}
