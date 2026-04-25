@@ -31,6 +31,7 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
 
     const [authorColor, setAuthorColor] = useState<"white" | "black">("white");
     const [songDataColor, setSongDataColor] = useState<"white" | "black">("white");
+    const [btnColor, setBtnColor] = useState<"white" | "black">("white");
 
     // -------------------------------------------------------
     // Utility: Calculate luminance
@@ -80,10 +81,12 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
     function analyzeOverlayColors(imageUrl: string) {
         // Author text is top-left-ish, song data sits bottom-right.
         const authorPoint = { x: 0.05, y: 0.05 };
-        const songPoint = { x: 0.9, y: 0.9 };
+        const songPoint = { x: 0.1, y: 0.9 };
+        const btnPoint = { x: 0.95, y: 0.05 };
 
         analyzeBackgroundAtPoint(imageUrl, authorPoint).then(setAuthorColor);
         analyzeBackgroundAtPoint(imageUrl, songPoint).then(setSongDataColor);
+        analyzeBackgroundAtPoint(imageUrl, btnPoint).then(setBtnColor);
     }
 
     // -------------------------------------------------------
@@ -214,22 +217,25 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
                     )}
                 </div>
 
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className="gap-2 no-drag scale-75 pointer-events-auto opacity-10 hover:opacity-80 transition-all"
+                <motion.button
+                    className="gap-2 p-2 rounded-lg no-drag scale-75 pointer-events-auto opacity-10 hover:opacity-50 transition-all"
                     onClick={(e: any) => {
                         e.preventDefault();
                         setShowNewTab(false);
                     }}
+                    animate={{
+                        backgroundColor: authorColor === "white" ? "#ffffff" : "#000000",
+                        color: authorColor === "white" ? "#000000" : "#ffffff"
+                    }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
                 >
                     <X />
-                </Button>
+                </motion.button>
             </div>
 
-            <div className='absolute bottom-1 left-0 right-0 p-2 flex items-end justify-between z-10'>
+            <div className='absolute bottom-1 left-0 right-0 p-2 pl-0 flex items-start justify-between z-10'>
+                {nowPlaying && <ImmersiveSongData nowPlaying={nowPlaying} themeColor={songDataColor} />}
                 <div></div>
-                <ImmersiveSongData nowPlaying={nowPlaying} themeColor={songDataColor} />
             </div>
 
             {/* ------------------------------------------
