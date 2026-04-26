@@ -15,7 +15,11 @@ import updater from "electron-updater";
 import AutoLaunch from "auto-launch";
 import keytar from "keytar";
 
-console.log(await keytar.getPassword("newtab-companion-spotify", "spotify-credentials"));
+// ── REMOVED: credentials leak ──────────────────────────────────────────────
+// console.log(await keytar.getPassword(...)) was printing raw Spotify tokens
+// to stdout on every launch, including in production builds.
+// Debug credential inspection should always be gated behind isDev:
+//   if (isDev) console.log(await keytar.getPassword(...))
 
 const { autoUpdater } = updater;
 
@@ -48,6 +52,13 @@ let currentPort;
 let tray = null;
 let autoLauncher = null;
 let updateInterval = null;
+
+// ── Updater state ──────────────────────────────────────────────────────────
+// Tracks whether a full download has completed and is ready to install.
+// update:install checks this before calling quitAndInstall() so we never
+// quit the app with nothing to actually install.
+let updateReady = false;
+let lastUpdateCheck = 0;
 
 function getAutoLauncher() {
   if (autoLauncher) return autoLauncher;
@@ -157,37 +168,67 @@ function emitFullscreenState(win = getActiveWindow()) {
 
 function setupAutoUpdater() {
   if (!app.isPackaged) return;
-  autoUpdater.autoDownload = true;
+
+  // ── CHANGED: autoDownload off ────────────────────────────────────────────
+  // Previously true, which silently downloaded and installed updates on quit
+  // with no user awareness. Now the renderer receives "available" status and
+  // the user must explicitly trigger the download via the update:download IPC.
+  autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
-  autoUpdater.on("checking-for-update", () =>
-    broadcast("update-status", { status: "checking" })
-  );
-  autoUpdater.on("update-available", (info) =>
-    broadcast("update-status", { status: "available", info })
-  );
-  autoUpdater.on("update-not-available", (info) =>
-    broadcast("update-status", { status: "none", info })
-  );
-  autoUpdater.on("error", (err) =>
-    broadcast("update-status", { status: "error", message: err?.message })
-  );
-  autoUpdater.on("download-progress", (progressObj) =>
-    broadcast("update-status", { status: "downloading", progress: progressObj })
-  );
-  autoUpdater.on("update-downloaded", (info) =>
-    broadcast("update-status", { status: "downloaded", info })
-  );
+  autoUpdater.on("checking-for-update", () => {
+    broadcast("update-status", { status: "checking" });
+  });
 
-  // Kick off initial check and a periodic background check (every 4 hours).
+  autoUpdater.on("update-available", (info) => {
+    broadcast("update-status", { status: "available", info });
+  });
+
+  autoUpdater.on("update-not-available", (info) => {
+    broadcast("update-status", { status: "none", info });
+  });
+
+  autoUpdater.on("error", (err) => {
+    console.warn("[auto-updater] error", err?.message);
+    broadcast("update-status", { status: "error", message: err?.message });
+  });
+
+  autoUpdater.on("download-progress", (progressObj) => {
+    broadcast("update-status", { status: "downloading", progress: progressObj });
+  });
+
+  // ── CHANGED: set updateReady flag ────────────────────────────────────────
+  // Previously this just broadcast. Now we also flip updateReady so that
+  // update:install can safely call quitAndInstall() knowing a build is ready.
+  autoUpdater.on("update-downloaded", (info) => {
+    updateReady = true;
+    broadcast("update-status", { status: "downloaded", info });
+    refreshTrayMenu();
+  });
+
+  // Kick off the initial check.
+  lastUpdateCheck = Date.now();
   autoUpdater.checkForUpdatesAndNotify().catch((err) =>
     console.warn("[auto-updater] initial check failed", err)
   );
+
+  // ── CHANGED: sleep-aware periodic check ─────────────────────────────────
+  // Previously used a single 4-hour setInterval, which drifts badly when the
+  // machine sleeps (the timer pauses but elapsed wall-clock time keeps going).
+  // Now we poll every 15 minutes and check whether 4 real hours have passed
+  // since the last successful check. This ensures the check fires promptly
+  // after the machine wakes from a long sleep.
+  const FOUR_HOURS = 4 * 60 * 60 * 1000;
+  const POLL_INTERVAL = 15 * 60 * 1000;
+
   updateInterval = setInterval(() => {
+    const now = Date.now();
+    if (now - lastUpdateCheck < FOUR_HOURS) return;
+    lastUpdateCheck = now;
     autoUpdater.checkForUpdates().catch((err) =>
       console.warn("[auto-updater] periodic check failed", err)
     );
-  }, 4 * 60 * 60 * 1000);
+  }, POLL_INTERVAL);
 }
 
 async function refreshTrayMenu() {
@@ -229,6 +270,31 @@ async function refreshTrayMenu() {
         }
       },
     },
+    { type: "separator" },
+    // ── ADDED: update options in tray ──────────────────────────────────────
+    // The app runs hidden in the tray most of the time. Without this, a user
+    // who never opens the window has no way to trigger or apply an update.
+    ...(updateReady
+      ? [
+          {
+            label: "⬆︎ Restart to update",
+            click: () => {
+              autoUpdater.quitAndInstall();
+            },
+          },
+        ]
+      : [
+          {
+            label: "Check for updates",
+            enabled: app.isPackaged,
+            click: () => {
+              lastUpdateCheck = 0; // force the next poll to fire immediately
+              autoUpdater.checkForUpdates().catch((err) =>
+                console.warn("[auto-updater] manual check failed", err)
+              );
+            },
+          },
+        ]),
     { type: "separator" },
     {
       label: "Quit",
@@ -384,20 +450,47 @@ async function bootstrap() {
     return { ok: true };
   });
   ipcMain.handle("app:version", () => app.getVersion());
+
   ipcMain.handle("update:check", async () => {
     if (!app.isPackaged) {
       return { ok: false, message: "Updates only run in packaged builds." };
     }
     try {
+      lastUpdateCheck = Date.now();
       const res = await autoUpdater.checkForUpdates();
       return { ok: true, info: res?.updateInfo };
     } catch (err) {
       return { ok: false, message: err?.message || "Update check failed" };
     }
   });
-  ipcMain.handle("update:install", async () => {
+
+  // ── ADDED: update:download ───────────────────────────────────────────────
+  // Since autoDownload is now false, the renderer needs a way to explicitly
+  // kick off the download after the user confirms they want to update.
+  // The renderer should call this when the user clicks "Download update".
+  ipcMain.handle("update:download", async () => {
     if (!app.isPackaged) {
       return { ok: false, message: "Updates only run in packaged builds." };
+    }
+    try {
+      await autoUpdater.downloadUpdate();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, message: err?.message || "Download failed" };
+    }
+  });
+
+  // ── CHANGED: update:install now guards with updateReady ──────────────────
+  // Previously called quitAndInstall() unconditionally. If the renderer called
+  // this before a download completed (or with no update downloaded at all),
+  // the app would quit without installing anything. Now we gate on updateReady,
+  // which is only flipped true inside the "update-downloaded" event handler.
+  ipcMain.handle("update:install", () => {
+    if (!app.isPackaged) {
+      return { ok: false, message: "Updates only run in packaged builds." };
+    }
+    if (!updateReady) {
+      return { ok: false, message: "No update has been downloaded yet." };
     }
     try {
       autoUpdater.quitAndInstall();
@@ -406,6 +499,7 @@ async function bootstrap() {
       return { ok: false, message: err?.message || "Install failed" };
     }
   });
+
   ipcMain.handle("open:external", (_evt, url) => {
     if (!url || typeof url !== "string") {
       return { ok: false, message: "Invalid URL" };
