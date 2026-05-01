@@ -180,14 +180,6 @@ export default function App() {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            {!spotifyConnected && (
-              <button
-                className="mt-3 text-xs text-slate-600 hover:text-slate-300 transition-colors"
-                onClick={handleSpotifyConnect}
-              >
-                Connect Spotify →
-              </button>
-            )}
           </div>
         </div>
       </div>

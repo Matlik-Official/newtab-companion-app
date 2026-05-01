@@ -26,7 +26,12 @@ jobs:
         with:
           node-version: 22
 
-      # --- 3. Install dependencies cleanly ---
+      # --- 3a. Linux: system deps required by keytar (libsecret) ---
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libsecret-1-dev
+
+      # --- 3b. Install dependencies cleanly ---
       - name: Install dependencies
         run: npm ci
 
@@ -71,7 +76,12 @@ jobs:
           npm version --no-git-tag-version $VERSION
 
       # --- 7. Build Electron app ---
+      # CSC_IDENTITY_AUTO_DISCOVERY=false skips macOS code signing (no Apple Developer cert).
+      # The resulting .dmg is unsigned — users must right-click → Open to bypass Gatekeeper.
+      # Remove this env var once a Developer ID certificate is set up as CSC_LINK secret.
       - name: Build Electron App
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
         run: |
           npm run build
           npx electron-builder --publish never
@@ -84,6 +94,7 @@ jobs:
             dist/**/*.exe
             dist/**/*.dmg
             dist/**/*.zip
+            dist/**/*.AppImage
             dist/**/*blockmap
             dist/**/*.yml
         env:

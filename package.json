@@ -66,6 +66,11 @@
         "zip"
       ],
       "icon": "electron/assets/logo.png"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "icon": "electron/assets/logo.png",
+      "category": "Utility"
     }
   },
   "dependencies": {

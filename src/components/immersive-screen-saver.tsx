@@ -203,52 +203,39 @@ const [authorColor, setAuthorColor] = useState<"white" | "black">("white");
         <main className="relative min-h-dvh max-h-dvh w-full bg-slate-950 text-slate-50 flex flex-col overflow-hidden">
 
             {/* ------------------------------------------
-                TOP BAR (Author text with adaptive color)
+                TOP BAR
             ------------------------------------------- */}
-            <div className="absolute top-1 left-1 right-1 flex items-center gap-1 justify-between drag z-20">
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-3 drag select-none z-20">
 
-                <div>
-                    {currentImage && (
-                        <motion.p
-                            className="text-sm font-bold pl-3"
-                            initial={{ opacity: 0 }}
-                            animate={{
-                                opacity: isAuthorVisible ? .5 : 0,
-                                color: authorColor === "white" ? "#ffffff" : "#000000"
-                            }}
-                            transition={{ duration: 0.6, ease: "easeInOut" }}
-                        >
-                            Image by: {currentImage.author}
-                        </motion.p>
-                    )}
-                </div>
+                <motion.p
+                    className="text-xs font-medium"
+                    initial={{ opacity: 0 }}
+                    animate={{
+                        opacity: isAuthorVisible ? 0.4 : 0,
+                        color: authorColor === "white" ? "#ffffff" : "#000000"
+                    }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                >
+                    {currentImage?.author ?? ""}
+                </motion.p>
 
-                <div className="flex items-center no-drag">
+                <div className="flex items-center gap-1 no-drag">
                     <motion.button
-                        className="p-2 rounded-lg scale-75 pointer-events-auto opacity-10 hover:opacity-50 transition-all"
+                        className="h-8 w-8 flex items-center justify-center pointer-events-auto opacity-30 hover:opacity-70 transition-opacity"
                         onClick={onToggleLyrics}
-                        animate={{
-                            backgroundColor: authorColor === "white" ? "#ffffff" : "#000000",
-                            color: authorColor === "white" ? "#000000" : "#ffffff"
-                        }}
+                        animate={{ color: authorColor === "white" ? "#ffffff" : "#000000" }}
                         transition={{ duration: 0.6, ease: "easeInOut" }}
                     >
-                        {showLyrics ? <Mic /> : <MicOff />}
+                        {showLyrics ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
                     </motion.button>
 
                     <motion.button
-                        className="p-2 rounded-lg scale-75 pointer-events-auto opacity-10 hover:opacity-50 transition-all"
-                        onClick={(e: any) => {
-                            e.preventDefault();
-                            setShowNewTab(false);
-                        }}
-                        animate={{
-                            backgroundColor: authorColor === "white" ? "#ffffff" : "#000000",
-                            color: authorColor === "white" ? "#000000" : "#ffffff"
-                        }}
+                        className="h-8 w-8 flex items-center justify-center pointer-events-auto opacity-30 hover:opacity-70 transition-opacity"
+                        onClick={(e: any) => { e.preventDefault(); setShowNewTab(false); }}
+                        animate={{ color: authorColor === "white" ? "#ffffff" : "#000000" }}
                         transition={{ duration: 0.6, ease: "easeInOut" }}
                     >
-                        <X />
+                        <X className="h-4 w-4" />
                     </motion.button>
                 </div>
             </div>
