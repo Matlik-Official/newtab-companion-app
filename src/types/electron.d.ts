@@ -14,6 +14,7 @@ export interface Settings {
   preferCider: boolean;
   autostart: boolean;
   apiPort: number;
+  showLyrics: boolean;
 }
 
 export interface ElectronAPI {

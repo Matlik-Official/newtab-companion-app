@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
-import { X } from 'lucide-react';
+import { X, Mic, MicOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageTypes, NowPlaying } from '../types/electron';
 import { useOS } from '../hooks/useOS';
 import { Button } from './ui/button';
 import ImmersiveSongData from './immersive-song-data';
+import SyncedLyrics from './synced-lyrics';
 
 type ImmersivePlayingProps = {
     setShowNewTab: React.Dispatch<React.SetStateAction<boolean>>;
     nowPlaying: NowPlaying | null;
+    showLyrics: boolean;
+    onToggleLyrics: () => void;
 };
 
-export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: ImmersivePlayingProps) {
+export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying, showLyrics, onToggleLyrics }: ImmersivePlayingProps) {
     const os = useOS();
 
     const refreshIntervalMs = 10_000;
@@ -29,9 +32,10 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
     const [shouldStartImageFade, setShouldStartImageFade] = useState(false);
     const [isFirstLoad, setIsFirstLoad] = useState(true);
 
-    const [authorColor, setAuthorColor] = useState<"white" | "black">("white");
+const [authorColor, setAuthorColor] = useState<"white" | "black">("white");
     const [songDataColor, setSongDataColor] = useState<"white" | "black">("white");
     const [btnColor, setBtnColor] = useState<"white" | "black">("white");
+    const [lyricsColor, setLyricsColor] = useState<"white" | "black">("white");
 
     // -------------------------------------------------------
     // Utility: Calculate luminance
@@ -83,10 +87,12 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
         const authorPoint = { x: 0.05, y: 0.05 };
         const songPoint = { x: 0.1, y: 0.9 };
         const btnPoint = { x: 0.95, y: 0.05 };
+        const lyricsPoint = { x: 0.9, y: 0.9 };
 
         analyzeBackgroundAtPoint(imageUrl, authorPoint).then(setAuthorColor);
         analyzeBackgroundAtPoint(imageUrl, songPoint).then(setSongDataColor);
         analyzeBackgroundAtPoint(imageUrl, btnPoint).then(setBtnColor);
+        analyzeBackgroundAtPoint(imageUrl, lyricsPoint).then(setLyricsColor);
     }
 
     // -------------------------------------------------------
@@ -217,25 +223,57 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
                     )}
                 </div>
 
-                <motion.button
-                    className="gap-2 p-2 rounded-lg no-drag scale-75 pointer-events-auto opacity-10 hover:opacity-50 transition-all"
-                    onClick={(e: any) => {
-                        e.preventDefault();
-                        setShowNewTab(false);
-                    }}
-                    animate={{
-                        backgroundColor: authorColor === "white" ? "#ffffff" : "#000000",
-                        color: authorColor === "white" ? "#000000" : "#ffffff"
-                    }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
-                >
-                    <X />
-                </motion.button>
+                <div className="flex items-center no-drag">
+                    <motion.button
+                        className="p-2 rounded-lg scale-75 pointer-events-auto opacity-10 hover:opacity-50 transition-all"
+                        onClick={onToggleLyrics}
+                        animate={{
+                            backgroundColor: authorColor === "white" ? "#ffffff" : "#000000",
+                            color: authorColor === "white" ? "#000000" : "#ffffff"
+                        }}
+                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                    >
+                        {showLyrics ? <Mic /> : <MicOff />}
+                    </motion.button>
+
+                    <motion.button
+                        className="p-2 rounded-lg scale-75 pointer-events-auto opacity-10 hover:opacity-50 transition-all"
+                        onClick={(e: any) => {
+                            e.preventDefault();
+                            setShowNewTab(false);
+                        }}
+                        animate={{
+                            backgroundColor: authorColor === "white" ? "#ffffff" : "#000000",
+                            color: authorColor === "white" ? "#000000" : "#ffffff"
+                        }}
+                        transition={{ duration: 0.6, ease: "easeInOut" }}
+                    >
+                        <X />
+                    </motion.button>
+                </div>
             </div>
 
-            <div className='absolute bottom-1 left-0 right-0 p-2 pl-0 flex items-start justify-between z-10'>
-                {nowPlaying && <ImmersiveSongData nowPlaying={nowPlaying} themeColor={songDataColor} />}
-                <div></div>
+            <div className='absolute bottom-0 left-0 right-0 flex items-end justify-between z-10 p-4'>
+                <div className="shrink-0">
+                    {nowPlaying && <ImmersiveSongData nowPlaying={nowPlaying} themeColor={songDataColor} />}
+                </div>
+                <AnimatePresence>
+                    {showLyrics && nowPlaying && (
+                        <motion.div
+                            className="shrink-0"
+                            initial={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+                            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                            exit={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+                            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                        >
+                            <SyncedLyrics
+                                nowPlaying={nowPlaying}
+                                themeColor={lyricsColor}
+                                animationDuration={0.3}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* ------------------------------------------
@@ -243,6 +281,28 @@ export default function ImmersiveScreenSaver({ setShowNewTab, nowPlaying }: Imme
             ------------------------------------------- */}
             <div className="relative h-svh w-svw overflow-hidden">
                 <AnimatePresence>
+                    {!currentImage && (
+                        <motion.div
+                            key="loading"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: fadeDuration, ease: "easeInOut" }}
+                            className="absolute inset-0 flex items-center justify-center"
+                        >
+                            <div className="flex gap-2">
+                                {[0, 1, 2].map((i) => (
+                                    <motion.div
+                                        key={i}
+                                        className="w-1.5 h-1.5 rounded-full bg-white/40"
+                                        animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
+                                        transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
+                                    />
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+
                     {[currentImage, shouldStartImageFade ? nextImage : null]
                         .filter(Boolean)
                         .map((img) => (

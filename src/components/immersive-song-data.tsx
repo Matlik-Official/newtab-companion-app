@@ -53,7 +53,7 @@ export default function ImmersiveSongData({ nowPlaying, themeColor, animationDur
                             backgroundColor: themeColor === "white" ? "#ffffff80" : "#00000080",
                             color: themeColor === "white" ? "#000000" : "#ffffff"
                         }}
-                            transition={{ duration: 0.6, ease: "easeInOut" }} className="relative p-4 py-2 flex items-center gap-4 h-full w-fit rounded-r-full bg-black/50 transition-all duration-300 backdrop-blur">
+                            transition={{ duration: 0.6, ease: "easeInOut" }} className="relative p-4 py-2 flex items-center gap-4 h-full w-fit rounded-full bg-black/50 transition-all duration-300 backdrop-blur">
                             <motion.div
                                 key={contentKey}
                                 initial={baseInitial}

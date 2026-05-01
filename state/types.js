@@ -16,6 +16,7 @@
  * @property {boolean} preferCider
  * @property {boolean} autostart
  * @property {number} apiPort
+ * @property {boolean} showLyrics
  */
 
 /** @type {NowPlaying} */
@@ -35,5 +36,6 @@ export const defaultSettings = {
   preferSpotify: true,
   preferCider: false,
   autostart: false,
-  apiPort: 8787
+  apiPort: 8787,
+  showLyrics: true,
 };

@@ -174,7 +174,12 @@ export default function App() {
   };
 
   return showNewTab ? (
-    <ImmersiveScreenSaver setShowNewTab={setShowNewTab} nowPlaying={nowPlaying} />
+    <ImmersiveScreenSaver
+      setShowNewTab={setShowNewTab}
+      nowPlaying={nowPlaying}
+      showLyrics={settings?.showLyrics ?? true}
+      onToggleLyrics={() => toggleSetting("showLyrics")}
+    />
   ) : (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <header className="relative flex select-none items-center justify-between bg-slate-950/80 p-4 backdrop-blur drag top-0 z-10">
