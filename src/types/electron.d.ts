@@ -27,6 +27,7 @@ export interface ElectronAPI {
   spotifyLogout: () => Promise<{ ok: boolean }>;
   appVersion: () => Promise<string>;
   checkForUpdates: () => Promise<{ ok: boolean; info?: unknown; message?: string }>;
+  downloadUpdate: () => Promise<{ ok: boolean; message?: string }>;
   installUpdate: () => Promise<{ ok: boolean; message?: string }>;
   openExternal: (url: string) => Promise<{ ok: boolean; message?: string }>;
   windowMinimize: () => Promise<void>;

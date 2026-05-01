@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   spotifyLogout: () => ipcRenderer.invoke("spotify:logout"),
   appVersion: () => ipcRenderer.invoke("app:version"),
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
+  downloadUpdate: () => ipcRenderer.invoke("update:download"),
   installUpdate: () => ipcRenderer.invoke("update:install"),
   openExternal: (url) => ipcRenderer.invoke("open:external", url),
   windowMinimize: () => ipcRenderer.invoke("window:minimize"),
