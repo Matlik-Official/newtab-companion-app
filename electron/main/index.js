@@ -404,7 +404,7 @@ async function bootstrap() {
   await startApi(settings.apiPort);
 
   const trayIcon = path.join(__dirname, "..", "assets", "logo.png");
-  const newTrayIcon = nativeImage.createFromPath(trayIcon).resize({ width: 16, height: 16 });
+  const newTrayIcon = nativeImage.createFromPath(trayIcon).resize({ width: 16, quality: "best" });
   tray = new Tray(newTrayIcon);
   await refreshTrayMenu();
   tray.on("click", () => {
