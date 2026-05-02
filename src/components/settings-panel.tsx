@@ -9,6 +9,7 @@ type Props = {
     updatePhase: string;
     updateStatus: string | null;
     onToggleSetting: (key: keyof Settings) => void;
+    onUpdateSetting: (key: keyof Settings, value: string) => void;
     onSpotifyConnect: () => void;
     onSpotifyDisconnect: () => void;
     onCheckForUpdates: () => void;
@@ -58,7 +59,7 @@ function Divider() {
 export default function SettingsPanel({
     onClose, settings, appVersion, spotifyConnected,
     updatePhase, updateStatus,
-    onToggleSetting, onSpotifyConnect, onSpotifyDisconnect,
+    onToggleSetting, onUpdateSetting, onSpotifyConnect, onSpotifyDisconnect,
     onCheckForUpdates, onDownloadUpdate, onInstallUpdate,
 }: Props) {
     return (
@@ -99,6 +100,15 @@ export default function SettingsPanel({
                     </Row>
                     <Row label="Prefer Cider" sub="Detected automatically when Cider is open">
                         <Toggle on={settings.preferCider} onToggle={() => onToggleSetting("preferCider")} />
+                    </Row>
+                    <Row label="Cider app token" sub="Required by Cider 2.x — find it in Cider → Settings → Extensions & APIs">
+                        <input
+                            type="password"
+                            value={settings.ciderToken ?? ""}
+                            onChange={(e) => onUpdateSetting("ciderToken", e.target.value)}
+                            placeholder="paste token"
+                            className="w-32 rounded bg-slate-800 border border-slate-700 px-2 py-0.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-slate-500"
+                        />
                     </Row>
 
                     <Divider />

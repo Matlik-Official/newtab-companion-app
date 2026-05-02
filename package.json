@@ -1,6 +1,6 @@
 {
   "name": "newtab-companion-app",
-  "version": "1.0.0",
+  "version": "1.0.64",
   "description": "Companion app for New Tab by MatlikOfficial",
   "main": "electron/main/index.js",
   "type": "module",
@@ -68,7 +68,7 @@
       "icon": "electron/assets/logo.png"
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": ["deb", "rpm"],
       "icon": "electron/assets/logo.png",
       "category": "Utility"
     }

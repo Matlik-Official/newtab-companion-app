@@ -29,7 +29,7 @@ jobs:
       # --- 3a. Linux: system deps required by keytar (libsecret) ---
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libsecret-1-dev
+        run: sudo apt-get update && sudo apt-get install -y libsecret-1-dev rpm
 
       # --- 3b. Install dependencies cleanly ---
       - name: Install dependencies
@@ -94,7 +94,8 @@ jobs:
             dist/**/*.exe
             dist/**/*.dmg
             dist/**/*.zip
-            dist/**/*.AppImage
+            dist/**/*.deb
+            dist/**/*.rpm
             dist/**/*blockmap
             dist/**/*.yml
         env:

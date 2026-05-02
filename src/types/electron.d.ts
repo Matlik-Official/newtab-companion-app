@@ -12,6 +12,7 @@ export interface NowPlaying {
 export interface Settings {
   preferSpotify: boolean;
   preferCider: boolean;
+  ciderToken: string;
   autostart: boolean;
   apiPort: number;
   showLyrics: boolean;

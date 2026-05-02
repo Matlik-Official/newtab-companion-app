@@ -28,10 +28,12 @@ function mapNowPlaying(info = {}) {
   };
 }
 
-export function createCiderService() {
+export function createCiderService({ getToken } = {}) {
   async function fetchNowPlaying() {
     const url = `${API_BASE}/playback/now-playing`;
-    const resp = await axios.get(url, { timeout: 500 });
+    const token = typeof getToken === "function" ? await getToken() : "";
+    const headers = token ? { apptoken: token } : {};
+    const resp = await axios.get(url, { timeout: 500, headers });
     if (resp.data?.status !== "ok" || !resp.data?.info) {
       debug("unexpected response", resp.data);
       return null;

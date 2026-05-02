@@ -14,6 +14,7 @@
  * @typedef {Object} Settings
  * @property {boolean} preferSpotify
  * @property {boolean} preferCider
+ * @property {string} ciderToken
  * @property {boolean} autostart
  * @property {number} apiPort
  * @property {boolean} showLyrics
@@ -35,6 +36,7 @@ export const defaultNowPlaying = {
 export const defaultSettings = {
   preferSpotify: true,
   preferCider: false,
+  ciderToken: "",
   autostart: false,
   apiPort: 8787,
   showLyrics: true,

@@ -98,6 +98,12 @@ export default function App() {
     if (updated) setSettings(updated);
   };
 
+  const updateSetting = async (key: keyof Settings, value: string) => {
+    if (!settings) return;
+    const updated = await api?.updateSettings?.({ [key]: value });
+    if (updated) setSettings(updated);
+  };
+
   const handleSpotifyConnect = async () => {
     await api?.startSpotifyLogin?.();
     const np = await api?.getNowPlaying?.();
@@ -193,6 +199,7 @@ export default function App() {
           updatePhase={updatePhase}
           updateStatus={updateStatus}
           onToggleSetting={toggleSetting}
+          onUpdateSetting={updateSetting}
           onSpotifyConnect={handleSpotifyConnect}
           onSpotifyDisconnect={handleSpotifyDisconnect}
           onCheckForUpdates={() => {

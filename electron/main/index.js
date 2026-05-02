@@ -44,7 +44,7 @@ let trafficLightsState = {
 };
 const nowPlayingStore = createNowPlayingStore(eventBus);
 const spotify = createSpotifyService();
-const cider = createCiderService();
+const cider = createCiderService({ getToken: async () => (await settingsStore?.get())?.ciderToken ?? "" });
 const services = [spotify, cider];
 let settingsStore;
 let apiServer;
