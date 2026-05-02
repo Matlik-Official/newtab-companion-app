@@ -65,7 +65,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           echo "Setting version to $VERSION"
-          npm version --no-git-tag-version "$VERSION"
+          npm version --no-git-tag-version --allow-same-version "$VERSION"
 
       - name: Sync version from tag (Windows)
         if: runner.os == 'Windows'
@@ -73,7 +73,7 @@ jobs:
         run: |
           $VERSION="${env:GITHUB_REF_NAME}".Substring(1)
           echo "Setting version to $VERSION"
-          npm version --no-git-tag-version $VERSION
+          npm version --no-git-tag-version --allow-same-version $VERSION
 
       # --- 7. Build Electron app ---
       # CSC_IDENTITY_AUTO_DISCOVERY=false skips macOS code signing (no Apple Developer cert).
