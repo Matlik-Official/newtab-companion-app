@@ -1,6 +1,6 @@
 {
   "name": "newtab-companion-app",
-  "version": "1.0.64",
+  "version": "1.0.66",
   "description": "Companion app for New Tab by MatlikOfficial",
   "main": "electron/main/index.js",
   "type": "module",
@@ -13,7 +13,10 @@
     "lint": "echo \"Add your lint command here\""
   },
   "keywords": [],
-  "author": "",
+  "author": {
+    "name": "Matlik-Official",
+    "email": "info@matlikofficial.com"
+  },
   "license": "ISC",
   "build": {
     "appId": "com.matlikofficial.newtabcompanion",
