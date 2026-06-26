@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { NowPlaying } from '../types/electron';
 import { MarqueeText } from './marquee-text';
+import SyncedLyrics from './synced-lyrics';
 
 type ImmersiveSongDataProps = {
     nowPlaying: NowPlaying | null;
@@ -43,17 +44,26 @@ export default function ImmersiveSongData({ nowPlaying, themeColor, animationDur
     const marqueeDuration = Math.max(6, titleScrollDistance / 25);
 
     return (
-        <div className="flex gap-4 h-fit w-fit rounded-full relative items-center">
+        <div className="flex gap-4 h-fit w-fit rounded-lg relative items-center">
             <AnimatePresence mode="popLayout">
                 {nowPlaying?.title ? (
                     <div
-                        className="relative flex items-center gap-4 h-24 w-fit rounded-full"
+                        className="relative flex items-center gap-4 h-fit w-fit rounded-lg"
                     >
                         <motion.div animate={{
                             backgroundColor: themeColor === "white" ? "#ffffff80" : "#00000080",
                             color: themeColor === "white" ? "#000000" : "#ffffff"
+
                         }}
-                            transition={{ duration: 0.6, ease: "easeInOut" }} className="relative p-4 py-2 flex items-center gap-4 h-full w-fit rounded-full bg-black/50 transition-all duration-300 backdrop-blur">
+                            transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }} className="relative p-4 flex flex-col gap-4 h-full w-fit rounded-lg bg-black/50 transition-all duration-300 backdrop-blur">
+                            {/* Lyrics */}
+                            <SyncedLyrics
+                                nowPlaying={nowPlaying}
+                                themeColor={themeColor}
+                                animationDuration={0.3}
+                            />
+
+                            {/* Song data */}
                             <motion.div
                                 key={contentKey}
                                 initial={baseInitial}
@@ -71,7 +81,7 @@ export default function ImmersiveSongData({ nowPlaying, themeColor, animationDur
                                     <img
                                         src={artwork}
                                         alt={alt}
-                                        className="absolute inset-0 h-full w-full rounded-full object-cover shadow-lg"
+                                        className="absolute inset-0 h-full w-full rounded-md object-cover shadow-lg"
                                     />
                                 </div>
                                 <div className="min-w-[220px] max-w-[320px] w-full rounded-l-md rounded-r-full flex flex-col justify-center gap-0.5">

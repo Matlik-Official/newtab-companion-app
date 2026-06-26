@@ -26,12 +26,7 @@ function getCurrentIndex(lyrics: { time: number; text: string }[], currentMs: nu
     return -1;
 }
 
-export default function SyncedLyrics({
-    nowPlaying,
-    themeColor,
-    animationDuration,
-    enableKaraoke = false,
-}: {
+interface SyncedLyricsProps {
     nowPlaying: {
         title: string;
         artist: string;
@@ -45,26 +40,22 @@ export default function SyncedLyrics({
     themeColor: string;
     animationDuration: number;
     enableKaraoke?: boolean;
-}) {
+    visibleLinesCount?: number; // <-- New configuration prop
+}
+
+export default function SyncedLyrics({
+    nowPlaying,
+    themeColor,
+    animationDuration,
+    enableKaraoke = false,
+    visibleLinesCount = 3, // <-- Easily configure defaults here (e.g. 1, 3, 5)
+}: SyncedLyricsProps) {
     const [lyrics, setLyrics] = useState<{ time: number; text: string }[]>([]);
     const [currentIndex, setCurrentIndex] = useState(-1);
     const [loading, setLoading] = useState(false);
 
     const [smoothProgress, setSmoothProgress] = useState(0);
     const lastUpdateRef = useRef(Date.now());
-
-    const minPillWidth = 288; // matches previous w-72
-    const textMeasureRef = useRef<HTMLSpanElement>(null);
-    const [pillWidth, setPillWidth] = useState(minPillWidth);
-
-    useEffect(() => {
-        if (loading || !textMeasureRef.current) {
-            setPillWidth(minPillWidth);
-            return;
-        }
-        const textW = textMeasureRef.current.offsetWidth;
-        setPillWidth(Math.max(minPillWidth, textW + 40)); // 40px = px-5 padding both sides
-    }, [currentIndex, loading]);
 
     useEffect(() => {
         if (!nowPlaying?.title || !nowPlaying?.artist) return;
@@ -124,84 +115,82 @@ export default function SyncedLyrics({
 
     if (!loading && lyrics.length === 0) return null;
 
-    const currentLine = lyrics[currentIndex];
     const textColor = themeColor === "white" ? "#000000" : "#ffffff";
     const dimColor = themeColor === "white" ? "#00000055" : "#ffffff55";
 
+    // --- LINE SPLITTING LOGIC ---
+    // Calculates how many lines to show above and below the active row
+    const halfWindow = Math.floor((visibleLinesCount - 1) / 2);
+    const startIdx = Math.max(0, currentIndex - halfWindow);
+    const endIdx = Math.min(lyrics.length - 1, startIdx + visibleLinesCount - 1);
+    
+    // Adjusted start index if we hit the end bound of the lyrics array
+    const adjustedStartIdx = Math.max(0, endIdx - visibleLinesCount + 1);
+    const visibleLines = lyrics.slice(adjustedStartIdx, endIdx + 1);
+
     return (
-        <>
-        {/* off-screen span used only to measure text width */}
-        <span
-            ref={textMeasureRef}
-            aria-hidden
-            className="fixed top-0 left-0 -translate-y-full text-sm font-semibold whitespace-nowrap pointer-events-none opacity-0"
-        >
-            {currentLine?.text ?? ""}
-        </span>
+        <div className="relative h-full flex flex-col  overflow-hidden gap-2">
+            <AnimatePresence mode="popLayout">
+                {loading ? (
+                    <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="flex gap-1.5 px-2"
+                    >
+                        {[0, 1, 2].map((i) => (
+                            <motion.div
+                                key={i}
+                                className="w-1 h-1 rounded-full"
+                                style={{ backgroundColor: textColor }}
+                                animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
+                                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
+                            />
+                        ))}
+                    </motion.div>
+                ) : (
+                    visibleLines.map((line) => {
+                        // Find the real index within the complete lyrics list
+                        const dynamicIndex = lyrics.findIndex((l) => l.time === line.time);
+                        const isActive = dynamicIndex === currentIndex;
 
-        <motion.div
-            animate={{ width: pillWidth }}
-            transition={{ duration: animationDuration, ease: [0.25, 0.1, 0.25, 1] }}
-            className="relative h-14 overflow-hidden rounded-full"
-        >
-            <motion.div
-                className="absolute inset-0 backdrop-blur-md"
-                animate={{ backgroundColor: themeColor === "white" ? "#ffffff80" : "#00000080" }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
-            />
-
-            <div className="relative h-full flex items-center px-5">
-                <AnimatePresence mode="wait">
-                    {loading ? (
-                        <motion.div
-                            key="loading"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="flex gap-1.5 px-2"
-                        >
-                            {[0, 1, 2].map((i) => (
-                                <motion.div
-                                    key={i}
-                                    className="w-1 h-1 rounded-full"
-                                    style={{ backgroundColor: textColor }}
-                                    animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
-                                    transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
-                                />
-                            ))}
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key={currentIndex}
-                            initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
-                            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                            exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
-                            transition={{ duration: animationDuration, ease: [0.25, 0.1, 0.25, 1] }}
-                            className="text-sm font-semibold whitespace-nowrap"
-                            style={{ color: textColor }}
-                        >
-                            {enableKaraoke && currentLine
-                                ? currentLine.text.split(" ").map((word, idx, arr) => {
-                                    const wordProgress = getKaraokeProgress(currentIndex) * arr.length;
-                                    return (
-                                        <span
-                                            key={idx}
-                                            style={{
-                                                color: idx < wordProgress ? textColor : dimColor,
-                                                transition: "color 0.1s linear",
-                                            }}
-                                        >
-                                            {word + " "}
-                                        </span>
-                                    );
-                                })
-                                : currentLine?.text ?? ""}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-        </motion.div>
-        </>
+                        return (
+                            <motion.div
+                                key={line.time}
+                                layout
+                                initial={{ opacity: 0, filter: "blur(4px)" }}
+                                animate={{ 
+                                    opacity: isActive ? 1 : 0.6,
+                                    filter: "blur(0px)" 
+                                }}
+                                exit={{ opacity: 0, filter: "blur(4px)" }}
+                                transition={{ duration: animationDuration, ease: [0.25, 0.1, 0.25, 1] }}
+                                className="text-md font-semibold"
+                                style={{ color: isActive ? textColor : dimColor }}
+                            >
+                                {enableKaraoke && isActive
+                                    ? line.text.split(" ").map((word, idx, arr) => {
+                                          const wordProgress = getKaraokeProgress(dynamicIndex) * arr.length;
+                                          return (
+                                              <span
+                                                  key={idx}
+                                                  style={{
+                                                      color: idx < wordProgress ? textColor : dimColor,
+                                                      transition: "color 0.1s linear",
+                                                  }}
+                                              >
+                                                  {word + " "}
+                                              </span>
+                                          );
+                                      })
+                                    : line.text}
+                            </motion.div>
+                        );
+                    })
+                )}
+            </AnimatePresence>
+        </div>
     );
 }

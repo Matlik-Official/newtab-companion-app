@@ -244,7 +244,7 @@ const [authorColor, setAuthorColor] = useState<"white" | "black">("white");
                 <div className="shrink-0">
                     {nowPlaying && <ImmersiveSongData nowPlaying={nowPlaying} themeColor={songDataColor} />}
                 </div>
-                <AnimatePresence>
+                {/* <AnimatePresence>
                     {showLyrics && nowPlaying && (
                         <motion.div
                             className="shrink-0"
@@ -260,7 +260,7 @@ const [authorColor, setAuthorColor] = useState<"white" | "black">("white");
                             />
                         </motion.div>
                     )}
-                </AnimatePresence>
+                </AnimatePresence> */}
             </div>
 
             {/* ------------------------------------------
